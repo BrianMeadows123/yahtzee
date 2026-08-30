@@ -36,3 +36,14 @@
 
 - [x] Push notifications for "it's your turn" — bell icon in the header subscribes via the service worker; server notifies whoever's turn it becomes on every score event. VAPID keys auto-generated and persisted server-side, dead subscriptions dropped automatically. Verified end-to-end except actual on-device delivery (browser automation can't grant OS notification permission or observe a push arriving)
   - [ ] **Needs a real-device check**: tap the bell 🔕→🔔 in the header, allow notifications, then have the other player score — confirm a notification actually shows up
+
+## Done: multi-game platform
+- [x] Restructured into a small lobby ("/") + independent rooms per game — Yahtzee and Connect Four each have their own seats/state, so switching games never loses progress on the other
+- [x] Connect Four built and shipped: full win detection (all 4 directions) and draw detection, exhaustively tested; reuses the existing design system, chart colors for the two pieces, and the win/lose stamp+confetti animation as-is
+- [x] `game/` reorganized into `games/<name>/` to establish the per-game convention for future additions
+- [ ] Note: this moved `/` from Yahtzee straight to the lobby — anyone who already added the old PWA to their home screen will now land on the lobby first instead of jumping straight into Yahtzee (one extra tap). Worth a heads up if that trips you up.
+
+## Up next: Battleship
+- [ ] Third game, discussed as a deliberate change of genre from dice/board games — hidden info + deduction instead of luck
+- [ ] Bigger lift than Connect Four: two separate boards per player, a ship-placement phase before play starts, hit/miss tracking
+- [ ] Should slot into the same games/<name>/ + independent-room pattern established for Connect Four

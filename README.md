@@ -1,8 +1,8 @@
-# Yahtzee
+# Yahtzee (and friends)
 
-A Yahtzee game I built so my girlfriend and I could play from our phones (one iPhone, one Android) without installing anything. It runs as a small web server, real-time over WebSockets, so both people see rolls and scores update live on separate devices.
+Started as a Yahtzee game I built so my girlfriend and I could play from our phones (one iPhone, one Android) without installing anything, and grew into a small two-player game night: a lobby page, then whatever you pick. It runs as a small web server, real-time over WebSockets, so both people see moves update live on separate devices.
 
-Follows the actual Yahtzee rules, including the joker rule for extra Yahtzees, which most quick clones online skip or get wrong.
+Yahtzee follows the actual rules, including the joker rule for extra Yahtzees, which most quick clones online skip or get wrong.
 
 <p>
   <img src="docs/screenshots/gameplay.jpg" alt="Gameplay screen, light mode" width="32%" />
@@ -27,6 +27,13 @@ npm test
 
 Covers the scoring rules and the turn/game flow, including the joker rule edge cases since those are the easiest part to get wrong.
 
+## Games
+
+- **Yahtzee** — the original. Full rules including the joker rule, dark mode, dice/scoring sound effects, and a win/lose animation.
+- **Connect Four** — the second game. Same real-time two-device play, same design system, no persistence/stats (yet).
+
+Each game is its own room with its own seats — whoever connects to a game first is "Player 1" there, the second person just joins. Switching what you're playing never loses progress on the other game; you could have both going at once.
+
 ## Stack
 
 Just Node (`node:http`, `node:sqlite`, `ws`, `web-push`), no framework, no build step. Plain JS/CSS on the frontend.
@@ -35,9 +42,9 @@ Just Node (`node:http`, `node:sqlite`, `ws`, `web-push`), no framework, no build
 
 There's a manifest + icon + service worker, so "Add to Home Screen" launches full-screen like a real app instead of opening inside browser chrome. The bell icon in the header lets you turn on "your turn" push notifications, so you don't have to keep the tab open to know when it's your move.
 
-## Stats
+## Stats (Yahtzee only, for now)
 
-Every finished game gets saved to a local SQLite file (`data/yahtzee.db`, gitignored — it's runtime data, not source). There's a `/stats.html` page with a score trend line chart, an average-score-per-category bar chart, win/loss records, and a recent-games table, grouped by player name rather than seat since whoever connects first becomes "Player 1" on a given day.
+Every finished Yahtzee game gets saved to a local SQLite file (`data/yahtzee.db`, gitignored — it's runtime data, not source). There's a `/stats.html` page with a score trend line chart, an average-score-per-category bar chart, win/loss records, and a recent-games table, grouped by player name rather than seat since whoever connects first becomes "Player 1" on a given day.
 
 ## About the build
 
