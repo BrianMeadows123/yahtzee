@@ -54,6 +54,8 @@ I built this with Claude doing most of the actual coding — game logic, the mul
 
 - "Pencil Scribble (9)" by JellyDaisies — [freesound.org/s/761665](https://freesound.org/s/761665/) — Creative Commons 0
 - "Dice Throw Roll on Board Game Playing Board" (1, 2, 3) — [Zapsplat.com](https://www.zapsplat.com/)
+- "Plastic Board Game Pieces Drop on Carpet" — [Zapsplat.com](https://www.zapsplat.com/music/plastic-board-game-pieces-drop-on-carpet-2/)
+- "Single Piece of Lego Door Drop onto Other Lego" — [Zapsplat.com](https://www.zapsplat.com/music/single-piece-of-lego-door-drop-onto-other-lego-1/)
 
 ## Contributors
 

@@ -94,6 +94,17 @@ function bindPushButton() {
   });
 }
 
+function countPieces(board) {
+  return board.flat().filter((c) => c !== null).length;
+}
+function playSound(src) {
+  const audio = new Audio(src);
+  audio.play().catch(() => {});
+}
+function playDropSound() {
+  playSound(`/sounds/c4-drop-${1 + Math.floor(Math.random() * 2)}.mp3`);
+}
+
 // --- Connection -----------------------------------------------------------
 
 const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -119,6 +130,9 @@ function connect() {
       isSpectator = msg.you.spectator;
       if (prevGame && prevGame.phase !== 'finished' && msg.game.phase === 'finished') {
         animateFinishOnNextRender = true;
+      }
+      if (prevGame && countPieces(msg.game.board) > countPieces(prevGame.board)) {
+        playDropSound();
       }
       render();
     } else if (msg.type === 'error') {
