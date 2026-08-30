@@ -15,16 +15,19 @@ if (theme) document.body.dataset.theme = theme;
 function effectiveTheme() {
   return theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 }
-function themeToggleHtml() {
+function themeButtonHtml() {
   const dark = effectiveTheme() === 'dark';
   return `<button id="theme-btn" class="icon-btn" title="Switch to ${dark ? 'light' : 'dark'} mode" aria-label="Toggle theme">${dark ? '☀' : '🌙'}</button>`;
+}
+function themeToggleHtml() {
+  return `<div class="header-icon-group">${themeButtonHtml()}</div>`;
 }
 function bindThemeToggle() {
   document.getElementById('theme-btn')?.addEventListener('click', () => {
     theme = effectiveTheme() === 'dark' ? 'light' : 'dark';
     document.body.dataset.theme = theme;
     localStorage.setItem('yahtzee-theme', theme);
-    document.getElementById('theme-btn').outerHTML = themeToggleHtml();
+    document.getElementById('theme-btn').outerHTML = themeButtonHtml();
     bindThemeToggle();
   });
 }
@@ -50,7 +53,7 @@ function render(stats) {
       <div class="header-row">
         ${themeToggleHtml()}
         <h1>Stats</h1>
-        <a href="/" class="icon-btn" title="Back to game" aria-label="Back to game">&larr;</a>
+        <div class="header-icon-group"><a href="/" class="icon-btn" title="Back to game" aria-label="Back to game">&larr;</a></div>
       </div>
     </header>
     <div class="stats-wrap">

@@ -62,8 +62,8 @@ body {
 
 header { text-align: center; margin-bottom: 10px; }
 .header-row { display: flex; align-items: center; }
-.header-row > *:first-child { flex: 1; }
-.header-row > *:last-child { flex: 1; display: flex; justify-content: flex-end; }
+.header-row > .header-icon-group { flex: 1; }
+.header-row > .header-icon-group:last-child { justify-content: flex-end; }
 h1 {
   margin: 0;
   font-family: 'Alfa Slab One', cursive;

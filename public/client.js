@@ -39,7 +39,7 @@ function effectiveTheme() {
 
 function themeToggleHtml() {
   const dark = effectiveTheme() === 'dark';
-  return `<button id="theme-btn" class="icon-btn" title="Switch to ${dark ? 'light' : 'dark'} mode" aria-label="Toggle theme">${dark ? '☀' : '🌙'}</button>`;
+  return `<div class="header-icon-group"><button id="theme-btn" class="icon-btn" title="Switch to ${dark ? 'light' : 'dark'} mode" aria-label="Toggle theme">${dark ? '☀' : '🌙'}</button></div>`;
 }
 
 function bindThemeToggle() {
