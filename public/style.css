@@ -1,8 +1,8 @@
 * { box-sizing: border-box; }
 
 :root {
-  --felt-dark: #333a1c;
-  --felt-light: #6c7a35;
+  --felt-dark: #140d08;
+  --felt-light: #3a2a1a;
   --panel: #f8efd8;
   --ink: #201709;
   --ink-soft: #4a3a24;
@@ -12,9 +12,6 @@
   --avocado: #74803c;
   --line: rgba(32, 23, 9, 0.16);
 }
-body[data-felt="teal"] { --felt-dark: #0f2e2b; --felt-light: #1c6e68; }
-body[data-felt="rust"] { --felt-dark: #3a150c; --felt-light: #c1502a; }
-body[data-felt="espresso"] { --felt-dark: #140d08; --felt-light: #3a2a1a; }
 
 @media (prefers-color-scheme: dark) {
   body:not([data-theme="light"]) {
@@ -68,18 +65,6 @@ h1 {
   display: flex; align-items: center; justify-content: center; gap: 10px;
   flex-wrap: wrap; margin-top: 6px;
 }
-.felt-picker { display: flex; gap: 6px; }
-.felt-swatch {
-  width: 16px; height: 16px; padding: 0; border-radius: 50%;
-  border: 2px solid rgba(253, 246, 227, 0.35); box-shadow: none;
-}
-.felt-swatch:active { transform: none; }
-.felt-swatch.active { border-color: #ffd54f; }
-.felt-swatch.felt-avocado { background: #6c7a35; }
-.felt-swatch.felt-teal { background: #1c6e68; }
-.felt-swatch.felt-rust { background: #c1502a; }
-.felt-swatch.felt-espresso { background: #3a2a1a; }
-
 .theme-toggle {
   display: flex; align-items: center; gap: 2px;
   border: 2px solid rgba(253, 246, 227, 0.5); border-radius: 999px; padding: 3px;

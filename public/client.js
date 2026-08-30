@@ -24,35 +24,12 @@ let latest = null;
 let armedCategory = null;
 let armTimer = null;
 
-const FELT_COLORS = ['avocado', 'teal', 'rust', 'espresso'];
-let feltColor = localStorage.getItem('yahtzee-felt') || 'avocado';
-document.body.dataset.felt = feltColor;
-
 let theme = localStorage.getItem('yahtzee-theme'); // 'light' | 'dark' | null (system default)
 if (theme) document.body.dataset.theme = theme;
 
 function pipGridHtml(value) {
   const active = new Set(PIP_LAYOUTS[value]);
   return Array.from({ length: 9 }, (_, i) => `<span class="pip ${active.has(i + 1) ? 'on' : ''}"></span>`).join('');
-}
-
-function feltPickerHtml() {
-  return `
-    <div class="felt-picker" role="group" aria-label="Felt color">
-      ${FELT_COLORS.map((c) => `<button class="felt-swatch felt-${c} ${c === feltColor ? 'active' : ''}" data-felt="${c}" title="${c} felt" aria-label="${c} felt"></button>`).join('')}
-    </div>
-  `;
-}
-
-function bindFeltPicker() {
-  document.querySelectorAll('.felt-swatch').forEach((el) => {
-    el.addEventListener('click', () => {
-      feltColor = el.dataset.felt;
-      document.body.dataset.felt = feltColor;
-      localStorage.setItem('yahtzee-felt', feltColor);
-      render();
-    });
-  });
 }
 
 function themeToggleHtml() {
@@ -185,7 +162,6 @@ function render() {
         <h1>Yahtzee</h1>
       </div>
       <div class="header-controls">
-        ${feltPickerHtml()}
         ${themeToggleHtml()}
         <button id="reset-btn" class="link-btn">Reset room</button>
       </div>
@@ -223,7 +199,6 @@ function render() {
       send({ type: 'reinit' });
     }
   });
-  bindFeltPicker();
   bindThemeToggle();
   document.querySelectorAll('.die').forEach((el) => {
     el.addEventListener('click', () => {
@@ -324,7 +299,6 @@ function renderFinished(game) {
         <h1>Yahtzee</h1>
       </div>
       <div class="header-controls">
-        ${feltPickerHtml()}
         ${themeToggleHtml()}
         <button id="reset-btn" class="link-btn">Reset room</button>
       </div>
@@ -343,7 +317,6 @@ function renderFinished(game) {
       send({ type: 'reinit' });
     }
   });
-  bindFeltPicker();
   bindThemeToggle();
 }
 
