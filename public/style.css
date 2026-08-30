@@ -240,7 +240,7 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 }
 .score-btn.armed:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 
-.center { text-align: center; margin-top: 20px; }
+.center { text-align: center; margin-top: 20px; position: relative; }
 .center h2 {
   font-family: 'Alfa Slab One', cursive; font-weight: 400; color: var(--ink); text-shadow: 2px 2px 0 var(--mustard);
 }
@@ -305,3 +305,37 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 .stats-table td { color: var(--ink); font-variant-numeric: tabular-nums; }
 .stats-table .win { color: var(--avocado); font-weight: 700; }
 .table-scroll { overflow-x: auto; }
+
+/* --- Finished-screen win/lose stamp + confetti --- */
+.stamp-badge {
+  width: 92px; height: 92px; border-radius: 50%;
+  display: grid; place-items: center; margin: 10px auto 0; position: relative; z-index: 2;
+  border: 4px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+  font-family: 'Alfa Slab One', cursive; font-size: 0.85rem; letter-spacing: 0.5px; text-transform: uppercase;
+  transform: rotate(var(--stamp-rot, -6deg));
+}
+.stamp-badge.win { background: var(--rust); color: var(--panel); --stamp-rot: -6deg; }
+.stamp-badge.quiet {
+  background: var(--panel); color: var(--ink-soft); border-color: var(--ink-soft);
+  box-shadow: 3px 3px 0 var(--ink-soft); font-size: 0.7rem; --stamp-rot: 4deg;
+}
+.stamp-badge.enter { animation: stampIn 0.5s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes stampIn {
+  0% { transform: scale(2.2) rotate(-25deg); opacity: 0; }
+  60% { transform: scale(0.92) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(var(--stamp-rot, -6deg)); opacity: 1; }
+}
+
+.confetti-piece {
+  position: absolute; top: -20px; width: 8px; height: 14px; z-index: 1;
+  border-radius: 2px; animation-name: confettiFall; animation-timing-function: linear; animation-fill-mode: forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  80% { opacity: 0.9; }
+  100% { transform: translateY(160px) rotate(540deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp-badge.enter { animation: none; }
+  .confetti-piece { display: none; }
+}

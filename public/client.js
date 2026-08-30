@@ -23,6 +23,7 @@ let isSpectator = true;
 let latest = null;
 let armedCategory = null;
 let armTimer = null;
+let animateFinishOnNextRender = false;
 
 let theme = localStorage.getItem('yahtzee-theme'); // 'light' | 'dark' | null (system default)
 if (theme) document.body.dataset.theme = theme;
@@ -111,6 +112,9 @@ function connect() {
       const reroll = prevGame && prevGame.turnStarted && msg.game.turnStarted
         && msg.game.currentPlayer === prevGame.currentPlayer
         && msg.game.rollsRemaining < prevGame.rollsRemaining;
+      if (prevGame && prevGame.phase !== 'finished' && msg.game.phase === 'finished') {
+        animateFinishOnNextRender = true;
+      }
       render();
       if (firstRollOfTurn || reroll) {
         playRollSound();
@@ -290,10 +294,32 @@ function scorecardEl(player, seatIndex, game, scoreOptions, canScoreHere) {
   `;
 }
 
+function confettiPiecesHtml(count) {
+  const colors = ['var(--mustard)', 'var(--rust)', 'var(--teal)', 'var(--avocado)'];
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const left = (5 + Math.random() * 90).toFixed(1);
+    const duration = (0.9 + Math.random() * 0.6).toFixed(2);
+    const delay = (Math.random() * 0.15).toFixed(2);
+    html += `<div class="confetti-piece" style="left:${left}%;background:${colors[i % colors.length]};animation-duration:${duration}s;animation-delay:${delay}s;"></div>`;
+  }
+  return html;
+}
+
 function renderFinished(game) {
+  const animate = animateFinishOnNextRender;
+  animateFinishOnNextRender = false;
+
   const winnerText = game.winner === null
     ? "It's a tie!"
     : `${game.players[game.winner].name} wins!`;
+  const iWon = !isSpectator && game.winner !== null && mySeat === game.winner;
+  const enterClass = animate ? 'enter' : '';
+  const stampHtml = iWon
+    ? `<div class="stamp-badge win ${enterClass}">Winner</div>`
+    : `<div class="stamp-badge quiet ${enterClass}">${game.winner === null ? 'Tie Game' : 'Good Game'}</div>`;
+  const confettiHtml = animate && iWon ? confettiPiecesHtml(26) : '';
+
   app.innerHTML = `
     <header>
       <div class="header-row">
@@ -306,7 +332,9 @@ function renderFinished(game) {
       </div>
     </header>
     <div class="center">
+      ${confettiHtml}
       <h2>${winnerText}</h2>
+      ${stampHtml}
       <div class="scorecards final">
         ${orderedSeats(game, mySeat).map((i) => scorecardEl(game.players[i], i, game, {}, false)).join('')}
       </div>
