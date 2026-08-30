@@ -27,6 +27,4 @@
 - [x] `/stats.html` dashboard: win/loss record + avg score + bonus rates per player, a score-trend line chart, an average-score-per-category bar chart, and a recent-games table
 - [x] Chart colors validated for colorblind-safe separation (dataviz skill's `validate_palette.js`) rather than reused verbatim from the UI's muted teal/rust — those read too gray as chart marks
 - [x] Linked from the main game header (📊 icon)
-
-## Possible next polish (not started, just ideas)
-- [ ] Win/lose animation on the finished screen
+- [x] Win/lose animation on the finished screen (sketched up first): confetti + bouncing "Winner" stamp for whoever's own seat won, a quiet muted "Good Game"/"Tie Game" stamp for the other viewer — plays once on the actual finish transition, not on every re-render
