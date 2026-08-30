@@ -28,9 +28,9 @@ header { text-align: center; margin-bottom: 14px; }
 .header-row { display: flex; align-items: center; justify-content: center; position: relative; }
 h1 {
   margin: 4px 0;
-  font-family: 'Fontdiner Swanky', 'Courier New', monospace;
-  font-size: 2rem;
-  letter-spacing: 3px;
+  font-family: 'Fontdiner Swanky', 'Special Elite', cursive;
+  font-size: 2.4rem;
+  letter-spacing: 2px;
   color: #fdf6e3;
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
 }
@@ -122,6 +122,7 @@ button {
   color: #fdf6e3; font-weight: 400; letter-spacing: 0.5px; cursor: pointer;
   box-shadow: 0 3px 0 #4a1717, 0 5px 8px rgba(0, 0, 0, 0.4);
 }
+#roll-btn { font-family: 'Figtree', sans-serif; font-weight: 700; letter-spacing: 0.2px; }
 button:active { transform: translateY(2px); box-shadow: 0 1px 0 #4a1717, 0 2px 4px rgba(0, 0, 0, 0.4); }
 button:disabled { background: #55524a; color: #928f86; box-shadow: none; cursor: default; }
 #join-btn { background: linear-gradient(180deg, #2f7d4f, #1f5c39); box-shadow: 0 3px 0 #123a24, 0 5px 8px rgba(0, 0, 0, 0.4); }
@@ -155,7 +156,7 @@ button:disabled { background: #55524a; color: #928f86; box-shadow: none; cursor:
 }
 .scorecard.active { box-shadow: 0 0 0 3px #ffd54f, 0 8px 18px rgba(0, 0, 0, 0.4); }
 .scorecard h2 {
-  font-family: 'Special Elite', monospace; font-size: 1rem; margin: 4px 0 10px;
+  font-family: 'Figtree', sans-serif; font-weight: 700; font-size: 1.05rem; margin: 4px 0 10px;
   text-align: center; color: var(--pencil); border-bottom: 2px solid var(--pencil);
   padding-bottom: 6px;
 }
@@ -165,29 +166,29 @@ button:disabled { background: #55524a; color: #928f86; box-shadow: none; cursor:
   padding: 3px 2px; font-size: 1rem;
 }
 .score-row .label {
-  font-family: 'Special Elite', monospace; font-size: 0.78rem; color: #4a4636;
-  letter-spacing: 0.2px;
+  font-family: 'Figtree', sans-serif; font-weight: 500; font-size: 0.8rem; color: #4a4636;
+  letter-spacing: 0.1px;
 }
 .score-row .hint {
-  font-family: 'Special Elite', monospace; font-size: 0.62rem; color: #9a9280;
+  font-family: 'Figtree', sans-serif; font-weight: 400; font-size: 0.65rem; color: #9a9280;
   margin-left: 5px;
 }
 .score-row .value {
-  font-family: 'Kalam', cursive; font-weight: 700; font-size: 1.15rem;
-  color: var(--ink-red); text-shadow: 0.5px 0.5px 0 rgba(0,0,0,0.1);
+  font-family: 'Figtree', sans-serif; font-weight: 700; font-size: 1.1rem;
+  color: var(--ink-red);
 }
-.score-row .value.empty { color: #c9c0a4; font-family: 'Special Elite', monospace; font-size: 0.9rem; }
+.score-row .value.empty { color: #c9c0a4; font-family: 'Figtree', sans-serif; font-weight: 400; font-size: 0.9rem; }
 .score-row.subtotal { font-size: 0.78rem; color: #7a745f; }
 .score-row.subtotal .label { color: #7a745f; }
 .score-row.total {
   font-weight: 700; margin-top: 6px; padding-top: 6px;
   border-top: 2px solid var(--pencil);
 }
-.score-row.total .label { font-size: 0.85rem; color: var(--pencil); }
+.score-row.total .label { font-size: 0.88rem; color: var(--pencil); font-weight: 700; }
 .score-row.total .value { font-size: 1.4rem; }
 
 .score-btn {
-  padding: 3px 12px; font-size: 0.95rem; font-family: 'Kalam', cursive; font-weight: 700;
+  padding: 3px 12px; font-size: 0.95rem; font-family: 'Figtree', sans-serif; font-weight: 700;
   background: none; color: #2f7d4f; border: 1.5px dashed #2f7d4f;
   border-radius: 4px; box-shadow: none;
 }
