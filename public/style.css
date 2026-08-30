@@ -98,10 +98,10 @@ h1 {
 }
 .scoreboard-tile {
   display: flex; align-items: center; gap: 10px;
-  background: var(--panel); border: 2.5px solid var(--ink); border-radius: 8px;
-  padding: 6px 12px; box-shadow: 3px 3px 0 var(--ink);
+  background: var(--panel); border: none; border-radius: 8px;
+  padding: 6px 12px; box-shadow: none; opacity: 0.92;
 }
-.scoreboard-tile.active { box-shadow: 3px 3px 0 var(--mustard), 0 0 0 2px var(--ink); }
+.scoreboard-tile.active { opacity: 1; box-shadow: 0 0 0 2px var(--mustard); }
 .sb-name {
   font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.72rem; color: var(--ink);
   max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -117,8 +117,8 @@ h1 {
 .die {
   width: 58px; height: 58px; border-radius: 9px;
   background: var(--panel);
-  border: 3px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .die.placeholder {
@@ -158,9 +158,9 @@ button {
   border: 3px solid var(--ink);
   background: var(--rust);
   color: var(--panel); font-weight: 700; letter-spacing: 0.2px; cursor: pointer;
-  box-shadow: 4px 4px 0 var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
 }
-button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+button:active { transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); }
 button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6; cursor: default; }
 #join-btn { background: var(--teal); }
 #name-input {
@@ -176,11 +176,11 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
   border-radius: 10px;
   padding: 16px 18px 12px;
   width: 100%; max-width: 340px;
-  box-shadow: 6px 6px 0 var(--ink);
-  border: 3px solid var(--ink);
+  box-shadow: none;
+  border: 1.5px solid var(--ink-soft);
   position: relative;
 }
-.scorecard.active { box-shadow: 6px 6px 0 var(--mustard), 0 0 0 2px var(--ink); }
+.scorecard.active { box-shadow: 5px 5px 0 var(--mustard); border: 3px solid var(--ink); }
 .stamp {
   position: absolute; top: -16px; right: -12px; width: 46px; height: 46px;
   border-radius: 50%; border: 2.5px solid var(--rust); background: var(--panel);
@@ -222,13 +222,17 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 
 .score-btn {
   font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.85rem;
-  padding: 5px 14px; border-radius: 6px; border: 2.5px solid var(--rust);
+  padding: 5px 14px; border-radius: 6px; border: 1.5px solid var(--rust);
   background: var(--panel); color: var(--rust); cursor: pointer;
-  box-shadow: 2px 2px 0 var(--rust);
+  box-shadow: none;
 }
-.score-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--rust); }
+.score-btn:active { transform: translate(1px, 1px); }
 .score-btn.forced { color: var(--panel); background: var(--rust); }
-.score-btn.armed { background: var(--mustard); border-color: var(--ink); color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+.score-btn.armed {
+  background: var(--mustard); border: 2.5px solid var(--ink); color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.score-btn.armed:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 
 .center { text-align: center; margin-top: 20px; }
 .center h2 {
