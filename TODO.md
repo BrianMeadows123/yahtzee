@@ -10,9 +10,6 @@
 - [x] Diagnosed "refused to connect" on phone — the `weplayyahtzee` hostname/URL was dead after the device was renamed back to `bmeadows-desktop`; serve config and instructions file now point at the current name
 - [x] Confirmed the orphaned `weplayyahtzee` entry in `tailscale serve status` is inert (dead hostname, can't route real traffic) — can't be removed via CLI since it belongs to the old node identity, not worth chasing further
 
-## Design follow-ups (sketch-ups before implementing)
-- [ ] Teal is reused for scoreboard total, every entered score, and the grand total — only difference is font size. Brian doesn't see this as a problem currently, but wants a sketch-up explored anyway
-
 ## Done: feel/redesign pass
 - [x] Dice "rolling" animation (tumble/spin before settling on result)
 - [x] Dice-on-felt rolling sound effect (real recorded SFX, credited in README)
@@ -23,6 +20,7 @@
 - [x] Felt table background: tried a halftone-dot texture, removed it per feedback (too cluttered) — now a flat color, theme-aware (kraft-tan light / espresso dark)
 - [x] Tiered visual hierarchy (design-reviewed and sketched up first): quiet scoreboard/inactive card/available buttons, bold active card/armed confirm, prominent roll button
 - [x] Condensed header (sketched up first): theme toggle + reset room collapsed into corner icon buttons, turn banner + waiting text merged into one status line
+- [x] Total color differentiation (sketched up first): teal = entered score, muted ink = subtotal math, avocado = any grand/running total
 
 ## Possible next polish (not started, just ideas)
 - [ ] Win/lose animation on the finished screen
