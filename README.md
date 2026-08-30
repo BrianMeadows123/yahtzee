@@ -4,6 +4,12 @@ A Yahtzee game I built so my girlfriend and I could play from our phones (one iP
 
 Follows the actual Yahtzee rules, including the joker rule for extra Yahtzees, which most quick clones online skip or get wrong.
 
+<p>
+  <img src="docs/screenshots/gameplay.jpg" alt="Gameplay screen, light mode" width="32%" />
+  <img src="docs/screenshots/win-celebration.jpg" alt="Win celebration, dark mode" width="32%" />
+  <img src="docs/screenshots/stats.jpg" alt="Stats dashboard" width="32%" />
+</p>
+
 ## Running it
 
 ```bash
