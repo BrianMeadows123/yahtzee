@@ -34,8 +34,5 @@
 - [x] Server/websocket integration tests (`test/server.test.js`) — spawns a real server on an isolated port/DB and drives it with actual `ws` clients: seat claiming, turn enforcement, stale-seat reclaiming, reinit, and a full game landing in `/api/stats`
 - [x] PWA manifest + icons + service worker — home-screen install now launches full-screen with a real app icon (a die-face design, rendered deterministically via headless Chromium) instead of a bookmark glyph. Service worker has no offline caching (nothing useful works offline for a live multiplayer game) but is wired up for push notifications
 
-## In progress: push notifications ("it's your turn")
-- [ ] Server: generate/store VAPID keypair, add `web-push` dependency
-- [ ] Server: store push subscriptions (per seat/token), send a notification when the turn passes to the other player
-- [ ] Client: permission prompt/toggle, subscribe via the service worker already in place
-- [ ] Needs verification on a real phone — push can't be fully tested via browser automation
+- [x] Push notifications for "it's your turn" — bell icon in the header subscribes via the service worker; server notifies whoever's turn it becomes on every score event. VAPID keys auto-generated and persisted server-side, dead subscriptions dropped automatically. Verified end-to-end except actual on-device delivery (browser automation can't grant OS notification permission or observe a push arriving)
+  - [ ] **Needs a real-device check**: tap the bell 🔕→🔔 in the header, allow notifications, then have the other player score — confirm a notification actually shows up
