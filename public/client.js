@@ -158,8 +158,6 @@ function scoreboardTile(player, seatIndex, game) {
   return `
     <div class="scoreboard-tile ${seatIndex === game.currentPlayer ? 'active' : ''}">
       <span class="sb-name">${escapeHtml(player.name)}</span>
-      <span class="sb-stat"><span class="sb-label">Upper</span><span class="sb-val">${player.summary.upperSubtotal + player.summary.upperBonus}</span></span>
-      <span class="sb-stat"><span class="sb-label">Lower</span><span class="sb-val">${player.summary.lowerSubtotal + player.summary.yahtzeeBonus}</span></span>
       <span class="sb-stat total"><span class="sb-label">Total</span><span class="sb-val">${player.summary.total}</span></span>
     </div>
   `;
