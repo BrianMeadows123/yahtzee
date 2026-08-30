@@ -21,6 +21,29 @@ let mySeat = null;
 let isSpectator = true;
 let latest = null;
 
+const FELT_COLORS = ['green', 'blue', 'red', 'black'];
+let feltColor = localStorage.getItem('yahtzee-felt') || 'green';
+document.body.dataset.felt = feltColor;
+
+function feltPickerHtml() {
+  return `
+    <div class="felt-picker" role="group" aria-label="Felt color">
+      ${FELT_COLORS.map((c) => `<button class="felt-swatch felt-${c} ${c === feltColor ? 'active' : ''}" data-felt="${c}" title="${c} felt" aria-label="${c} felt"></button>`).join('')}
+    </div>
+  `;
+}
+
+function bindFeltPicker() {
+  document.querySelectorAll('.felt-swatch').forEach((el) => {
+    el.addEventListener('click', () => {
+      feltColor = el.dataset.felt;
+      document.body.dataset.felt = feltColor;
+      localStorage.setItem('yahtzee-felt', feltColor);
+      render();
+    });
+  });
+}
+
 const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
 const wsUrl = `${proto}//${location.host}/${token ? `?token=${encodeURIComponent(token)}` : ''}`;
 let ws;
@@ -78,6 +101,7 @@ function render() {
   app.innerHTML = `
     <header>
       <div class="header-row">
+        ${feltPickerHtml()}
         <h1>Yahtzee</h1>
         <button id="reset-btn" class="link-btn">Reset room</button>
       </div>
@@ -115,6 +139,7 @@ function render() {
       send({ type: 'reinit' });
     }
   });
+  bindFeltPicker();
   document.querySelectorAll('.die').forEach((el) => {
     el.addEventListener('click', () => {
       if (!canHold) return;
@@ -203,6 +228,7 @@ function renderFinished(game) {
   app.innerHTML = `
     <header>
       <div class="header-row">
+        ${feltPickerHtml()}
         <h1>Yahtzee</h1>
         <button id="reset-btn" class="link-btn">Reset room</button>
       </div>
@@ -221,6 +247,7 @@ function renderFinished(game) {
       send({ type: 'reinit' });
     }
   });
+  bindFeltPicker();
 }
 
 function escapeHtml(str) {
