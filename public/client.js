@@ -13,6 +13,7 @@ const PIP_LAYOUTS = {
 };
 const UPPER = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
 const LOWER = ['threeOfAKind', 'fourOfAKind', 'fullHouse', 'smallStraight', 'largeStraight', 'yahtzee', 'chance'];
+const SCORE_CONFIRM_TIMEOUT = 4000;
 
 const app = document.getElementById('app');
 
@@ -20,10 +21,20 @@ let token = localStorage.getItem('yahtzee-token');
 let mySeat = null;
 let isSpectator = true;
 let latest = null;
+let armedCategory = null;
+let armTimer = null;
 
 const FELT_COLORS = ['green', 'blue', 'red', 'black'];
 let feltColor = localStorage.getItem('yahtzee-felt') || 'green';
 document.body.dataset.felt = feltColor;
+
+let theme = localStorage.getItem('yahtzee-theme'); // 'light' | 'dark' | null (system default)
+if (theme) document.body.dataset.theme = theme;
+
+function pipGridHtml(value) {
+  const active = new Set(PIP_LAYOUTS[value]);
+  return Array.from({ length: 9 }, (_, i) => `<span class="pip ${active.has(i + 1) ? 'on' : ''}"></span>`).join('');
+}
 
 function feltPickerHtml() {
   return `
@@ -44,6 +55,62 @@ function bindFeltPicker() {
   });
 }
 
+function themeToggleHtml() {
+  return `
+    <div class="theme-toggle" role="group" aria-label="Light or dark mode">
+      <button class="theme-opt ${theme === 'light' ? 'active' : ''}" data-theme-choice="light">Light</button>
+      <button class="theme-opt ${theme === 'dark' ? 'active' : ''}" data-theme-choice="dark">Dark</button>
+    </div>
+  `;
+}
+
+function bindThemeToggle() {
+  document.querySelectorAll('.theme-opt').forEach((el) => {
+    el.addEventListener('click', () => {
+      theme = el.dataset.themeChoice;
+      document.body.dataset.theme = theme;
+      localStorage.setItem('yahtzee-theme', theme);
+      render();
+    });
+  });
+}
+
+function playSound(src) {
+  const audio = new Audio(src);
+  audio.play().catch(() => {});
+}
+function playRollSound(isFirstRoll) {
+  playSound(isFirstRoll ? '/sounds/shake.mp3' : `/sounds/roll-${1 + Math.floor(Math.random() * 3)}.mp3`);
+}
+function playScratchSound() {
+  playSound('/sounds/scratch.wav');
+}
+
+function animateDiceRoll(held) {
+  const dieEls = document.querySelectorAll('.dice-row .die');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return;
+  dieEls.forEach((el, i) => { if (!held[i]) el.classList.add('rolling'); });
+  let ticks = 0;
+  const flicker = setInterval(() => {
+    dieEls.forEach((el, i) => {
+      if (held[i]) return;
+      const grid = el.querySelector('.pip-grid');
+      if (grid) grid.innerHTML = pipGridHtml(1 + Math.floor(Math.random() * 6));
+    });
+    ticks++;
+    if (ticks >= 5) {
+      clearInterval(flicker);
+      dieEls.forEach((el, i) => {
+        el.classList.remove('rolling');
+        if (held[i]) return;
+        const grid = el.querySelector('.pip-grid');
+        if (grid) grid.innerHTML = pipGridHtml(latest.game.dice[i]);
+      });
+    }
+  }, 70);
+}
+
 const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
 const wsUrl = `${proto}//${location.host}/${token ? `?token=${encodeURIComponent(token)}` : ''}`;
 let ws;
@@ -61,10 +128,19 @@ function connect() {
       token = msg.token;
       localStorage.setItem('yahtzee-token', token);
     } else if (msg.type === 'state') {
+      const prevGame = latest?.game;
       latest = msg;
       mySeat = msg.you.seat;
       isSpectator = msg.you.spectator;
+      const firstRollOfTurn = prevGame && !prevGame.turnStarted && msg.game.turnStarted;
+      const reroll = prevGame && prevGame.turnStarted && msg.game.turnStarted
+        && msg.game.currentPlayer === prevGame.currentPlayer
+        && msg.game.rollsRemaining < prevGame.rollsRemaining;
       render();
+      if (firstRollOfTurn || reroll) {
+        playRollSound(firstRollOfTurn);
+        animateDiceRoll(msg.game.held);
+      }
     } else if (msg.type === 'error') {
       flashError(msg.message);
     }
@@ -89,6 +165,11 @@ function render() {
   const { game, scoreOptions, seatsTaken } = latest;
   const myTurn = mySeat === game.currentPlayer && !isSpectator;
 
+  if (armedCategory && !(myTurn && scoreOptions[armedCategory])) {
+    armedCategory = null;
+    clearTimeout(armTimer);
+  }
+
   if (game.phase === 'finished') {
     renderFinished(game);
     return;
@@ -101,8 +182,11 @@ function render() {
   app.innerHTML = `
     <header>
       <div class="header-row">
-        ${feltPickerHtml()}
         <h1>Yahtzee</h1>
+      </div>
+      <div class="header-controls">
+        ${feltPickerHtml()}
+        ${themeToggleHtml()}
         <button id="reset-btn" class="link-btn">Reset room</button>
       </div>
       <div class="turn-banner ${myTurn ? 'my-turn' : ''}">
@@ -140,6 +224,7 @@ function render() {
     }
   });
   bindFeltPicker();
+  bindThemeToggle();
   document.querySelectorAll('.die').forEach((el) => {
     el.addEventListener('click', () => {
       if (!canHold) return;
@@ -147,7 +232,20 @@ function render() {
     });
   });
   document.querySelectorAll('.score-btn').forEach((el) => {
-    el.addEventListener('click', () => send({ type: 'score', category: el.dataset.category }));
+    el.addEventListener('click', () => {
+      const cat = el.dataset.category;
+      if (armedCategory !== cat) {
+        armedCategory = cat;
+        clearTimeout(armTimer);
+        armTimer = setTimeout(() => { armedCategory = null; render(); }, SCORE_CONFIRM_TIMEOUT);
+        render();
+      } else {
+        clearTimeout(armTimer);
+        armedCategory = null;
+        playScratchSound();
+        send({ type: 'score', category: cat });
+      }
+    });
   });
   document.getElementById('name-input')?.addEventListener('change', (e) => {
     send({ type: 'setName', name: e.target.value });
@@ -173,14 +271,9 @@ function diceEl(value, held, index, canHold, turnStarted) {
   if (!turnStarted) {
     return `<div class="die placeholder"></div>`;
   }
-  const active = new Set(PIP_LAYOUTS[value]);
-  const pips = Array.from({ length: 9 }, (_, i) => {
-    const pos = i + 1;
-    return `<span class="pip ${active.has(pos) ? 'on' : ''}"></span>`;
-  }).join('');
   return `
     <div class="die ${held ? 'held' : ''} ${canHold ? 'clickable' : ''}" data-index="${index}">
-      <div class="pip-grid">${pips}</div>
+      <div class="pip-grid">${pipGridHtml(value)}</div>
     </div>
   `;
 }
@@ -194,11 +287,12 @@ function scorecardEl(player, seatIndex, game, scoreOptions, canScoreHere) {
     const filled = player.scorecard[cat] !== null;
     const option = canScoreHere ? scoreOptions[cat] : undefined;
     const clickable = canScoreHere && !filled && option !== undefined;
+    const armed = clickable && cat === armedCategory;
     let valueHtml;
     if (filled) {
       valueHtml = `<span class="value">${player.scorecard[cat]}</span>`;
     } else if (clickable) {
-      valueHtml = `<button class="score-btn ${option.forced ? 'forced' : ''}" data-category="${cat}">${option.score}</button>`;
+      valueHtml = `<button class="score-btn ${option.forced ? 'forced' : ''} ${armed ? 'armed' : ''}" data-category="${cat}">${armed ? 'Confirm?' : option.score}</button>`;
     } else {
       valueHtml = `<span class="value empty">—</span>`;
     }
@@ -208,6 +302,7 @@ function scorecardEl(player, seatIndex, game, scoreOptions, canScoreHere) {
 
   return `
     <div class="scorecard ${seatIndex === game.currentPlayer ? 'active' : ''}">
+      <div class="stamp"><div class="pip-grid">${pipGridHtml(6)}</div></div>
       <h2>${escapeHtml(player.name)}</h2>
       ${rows(UPPER)}
       <div class="score-row subtotal"><span class="label">Upper total</span><span class="value">${player.summary.upperSubtotal}</span></div>
@@ -226,8 +321,11 @@ function renderFinished(game) {
   app.innerHTML = `
     <header>
       <div class="header-row">
-        ${feltPickerHtml()}
         <h1>Yahtzee</h1>
+      </div>
+      <div class="header-controls">
+        ${feltPickerHtml()}
+        ${themeToggleHtml()}
         <button id="reset-btn" class="link-btn">Reset room</button>
       </div>
     </header>
@@ -246,6 +344,7 @@ function renderFinished(game) {
     }
   });
   bindFeltPicker();
+  bindThemeToggle();
 }
 
 function escapeHtml(str) {
