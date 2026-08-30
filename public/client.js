@@ -55,6 +55,68 @@ function bindThemeToggle() {
   });
 }
 
+// --- Push notifications: "your turn" alerts -----------------------------
+
+let pushSubscribed = false;
+const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window;
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
+async function refreshPushState() {
+  if (!pushSupported) return;
+  const registration = await navigator.serviceWorker.ready;
+  const sub = await registration.pushManager.getSubscription();
+  pushSubscribed = !!sub;
+}
+
+async function subscribeToPush() {
+  if (!token) return;
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') return;
+  const { publicKey } = await fetch('/api/vapid-public-key').then((r) => r.json());
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(publicKey),
+  });
+  await fetch('/api/push/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, subscription: subscription.toJSON() }),
+  });
+  pushSubscribed = true;
+}
+
+async function unsubscribeFromPush() {
+  const registration = await navigator.serviceWorker.ready;
+  const sub = await registration.pushManager.getSubscription();
+  if (sub) await sub.unsubscribe();
+  await fetch('/api/push/unsubscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  pushSubscribed = false;
+}
+
+function pushButtonHtml() {
+  if (!pushSupported) return '';
+  return `<button id="push-btn" class="icon-btn" title="${pushSubscribed ? 'Turn off turn notifications' : 'Notify me on my turn'}" aria-label="Toggle turn notifications">${pushSubscribed ? '🔔' : '🔕'}</button>`;
+}
+
+function bindPushButton() {
+  document.getElementById('push-btn')?.addEventListener('click', async () => {
+    if (pushSubscribed) await unsubscribeFromPush();
+    else await subscribeToPush();
+    render();
+  });
+}
+
 function playSound(src) {
   const audio = new Audio(src);
   audio.play().catch(() => {});
@@ -130,6 +192,7 @@ function connect() {
   };
 }
 connect();
+refreshPushState().then(() => render());
 
 function send(payload) {
   if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
@@ -168,6 +231,7 @@ function render() {
         ${themeToggleHtml()}
         <h1>Yahtzee</h1>
         <div class="header-icon-group">
+          ${pushButtonHtml()}
           <a href="/stats.html" class="icon-btn" title="Stats" aria-label="Stats">📊</a>
           <button id="reset-btn" class="icon-btn" title="Reset room" aria-label="Reset room">↺</button>
         </div>
@@ -209,6 +273,7 @@ function render() {
     }
   });
   bindThemeToggle();
+  bindPushButton();
   document.querySelectorAll('.die').forEach((el) => {
     el.addEventListener('click', () => {
       if (!canHold) return;
@@ -330,6 +395,7 @@ function renderFinished(game) {
         ${themeToggleHtml()}
         <h1>Yahtzee</h1>
         <div class="header-icon-group">
+          ${pushButtonHtml()}
           <a href="/stats.html" class="icon-btn" title="Stats" aria-label="Stats">📊</a>
           <button id="reset-btn" class="icon-btn" title="Reset room" aria-label="Reset room">↺</button>
         </div>
@@ -352,6 +418,7 @@ function renderFinished(game) {
     }
   });
   bindThemeToggle();
+  bindPushButton();
 }
 
 function escapeHtml(str) {

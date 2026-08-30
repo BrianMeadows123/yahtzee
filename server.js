@@ -8,7 +8,10 @@ import { WebSocketServer } from 'ws';
 import {
   newGame, roll, toggleHold, scoreCategory, getScoreOptions, summarize,
 } from './game/gameState.js';
-import { recordGame, getStats, closeDb } from './db.js';
+import {
+  recordGame, getStats, closeDb, saveSubscription, getSubscription, removeSubscription,
+} from './db.js';
+import { publicKey as vapidPublicKey, sendPush } from './push.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -51,6 +54,16 @@ function claimOpenSeat(token) {
 function resetRoom() {
   seats = [null, null];
   game = newGame(['Player 1', 'Player 2']);
+}
+
+async function notifyTurn(game) {
+  const token = seats[game.currentPlayer];
+  if (!token) return;
+  const subscription = getSubscription(token);
+  if (!subscription) return;
+  const name = game.players[game.currentPlayer].name;
+  const ok = await sendPush(subscription, { title: 'Yahtzee', body: `Your turn, ${name}!` });
+  if (!ok) removeSubscription(token);
 }
 
 function publicState() {
@@ -115,13 +128,61 @@ function serveStatic(req, res) {
   });
 }
 
-function handleRequest(req, res) {
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk;
+      if (raw.length > 1e5) req.destroy(); // guard against absurd payloads
+    });
+    req.on('end', () => {
+      try { resolve(raw ? JSON.parse(raw) : {}); } catch (err) { reject(err); }
+    });
+    req.on('error', reject);
+  });
+}
+
+function sendJson(res, status, body) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(body));
+}
+
+async function handleRequest(req, res) {
   const reqPath = req.url.split('?')[0];
+
   if (reqPath === '/api/stats') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(getStats()));
+    sendJson(res, 200, getStats());
     return;
   }
+
+  if (reqPath === '/api/vapid-public-key') {
+    sendJson(res, 200, { publicKey: vapidPublicKey });
+    return;
+  }
+
+  if (reqPath === '/api/push/subscribe' && req.method === 'POST') {
+    try {
+      const { token, subscription } = await readJsonBody(req);
+      if (!token || !subscription) { sendJson(res, 400, { error: 'Missing token or subscription' }); return; }
+      saveSubscription(token, subscription);
+      sendJson(res, 200, { ok: true });
+    } catch {
+      sendJson(res, 400, { error: 'Bad request' });
+    }
+    return;
+  }
+
+  if (reqPath === '/api/push/unsubscribe' && req.method === 'POST') {
+    try {
+      const { token } = await readJsonBody(req);
+      if (token) removeSubscription(token);
+      sendJson(res, 200, { ok: true });
+    } catch {
+      sendJson(res, 400, { error: 'Bad request' });
+    }
+    return;
+  }
+
   serveStatic(req, res);
 }
 
@@ -180,6 +241,8 @@ wss.on('connection', (ws, req) => {
         scoreCategory(game, msg.category);
         if (game.phase === 'finished') {
           recordGame(game, game.players.map((p) => summarize(p.scorecard)));
+        } else {
+          notifyTurn(game); // fire-and-forget — don't hold up the broadcast on push delivery
         }
       } else if (msg.type === 'newGame') {
         game = newGame(game.players.map((p) => p.name));

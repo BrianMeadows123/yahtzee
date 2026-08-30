@@ -34,7 +34,31 @@ db.exec(`
     score INTEGER NOT NULL,
     PRIMARY KEY (game_id, seat, category)
   );
+  CREATE TABLE IF NOT EXISTS push_subscriptions (
+    token TEXT PRIMARY KEY,
+    subscription TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
+
+// Push subscriptions are keyed by the seat token (the stable per-device
+// identity already used for reconnection), not seat number — a seat's
+// occupant can change day to day, but a browser's own subscription shouldn't.
+export function saveSubscription(token, subscription) {
+  db.prepare(`
+    INSERT INTO push_subscriptions (token, subscription, updated_at) VALUES (?, ?, ?)
+    ON CONFLICT(token) DO UPDATE SET subscription = excluded.subscription, updated_at = excluded.updated_at
+  `).run(token, JSON.stringify(subscription), new Date().toISOString());
+}
+
+export function getSubscription(token) {
+  const row = db.prepare('SELECT subscription FROM push_subscriptions WHERE token = ?').get(token);
+  return row ? JSON.parse(row.subscription) : null;
+}
+
+export function removeSubscription(token) {
+  db.prepare('DELETE FROM push_subscriptions WHERE token = ?').run(token);
+}
 
 // Records a just-finished game (both scorecards complete) for history/stats.
 // Grouping by player NAME (not seat) elsewhere lets stats follow a person

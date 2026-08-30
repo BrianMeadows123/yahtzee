@@ -29,7 +29,11 @@ Covers the scoring rules and the turn/game flow, including the joker rule edge c
 
 ## Stack
 
-Just Node (`node:http`, `node:sqlite`, `ws`), no framework, no build step. Plain JS/CSS on the frontend.
+Just Node (`node:http`, `node:sqlite`, `ws`, `web-push`), no framework, no build step. Plain JS/CSS on the frontend.
+
+## Install it as an app
+
+There's a manifest + icon + service worker, so "Add to Home Screen" launches full-screen like a real app instead of opening inside browser chrome. The bell icon in the header lets you turn on "your turn" push notifications, so you don't have to keep the tab open to know when it's your move.
 
 ## Stats
 
