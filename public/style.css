@@ -339,3 +339,47 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
   .stamp-badge.enter { animation: none; }
   .confetti-piece { display: none; }
 }
+
+/* --- Lobby --- */
+.lobby-wrap { max-width: 480px; margin: 30px auto 0; padding: 0 14px; }
+.lobby-sub { text-align: center; color: var(--ink-soft); font-size: 0.85rem; margin: 0 0 24px; }
+.lobby-tiles { display: flex; flex-direction: column; gap: 16px; }
+.game-tile {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--panel); border: 3px solid var(--ink); border-radius: 12px;
+  padding: 18px 20px; text-decoration: none; color: var(--ink);
+  box-shadow: 5px 5px 0 var(--ink); transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.game-tile:active { transform: translate(2px, 2px); box-shadow: 3px 3px 0 var(--ink); }
+.game-tile .tile-emoji { font-size: 2.4rem; flex-shrink: 0; }
+.game-tile .tile-text h2 {
+  font-family: 'Alfa Slab One', cursive; font-weight: 400; font-size: 1.15rem;
+  margin: 0 0 4px; color: var(--ink);
+}
+.game-tile .tile-text p { margin: 0; font-size: 0.8rem; color: var(--ink-soft); }
+
+/* --- Connect Four --- */
+.c4-legend { display: flex; gap: 16px; justify-content: center; margin: 14px 0; }
+.c4-legend .key { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; color: var(--ink); }
+.c4-legend .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); }
+.c4-legend .dot.p0 { background: var(--chart-1); }
+.c4-legend .dot.p1 { background: var(--chart-2); }
+
+.c4-board-wrap { display: flex; justify-content: center; margin: 10px 0 24px; overflow-x: auto; }
+.c4-board {
+  display: inline-flex; gap: 5px; background: var(--ink); padding: 8px;
+  border-radius: 12px; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+}
+.c4-col { display: flex; flex-direction: column; gap: 5px; border-radius: 6px; }
+.c4-col.clickable { cursor: pointer; }
+.c4-col.clickable:active { opacity: 0.85; }
+.c4-cell {
+  width: 38px; height: 38px; border-radius: 50%; background: var(--panel);
+  border: 2px solid var(--panel); transition: background 0.1s ease;
+}
+.c4-cell.p0 { background: var(--chart-1); }
+.c4-cell.p1 { background: var(--chart-2); }
+.c4-cell.win { box-shadow: 0 0 0 3px var(--mustard); }
+@media (max-width: 400px) {
+  .c4-cell { width: 32px; height: 32px; }
+}

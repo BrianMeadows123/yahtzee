@@ -6,8 +6,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import {
-  newGame, roll, toggleHold, scoreCategory, getScoreOptions, summarize,
-} from './game/gameState.js';
+  newGame as newYahtzeeGame, roll, toggleHold, scoreCategory, getScoreOptions, summarize,
+} from './games/yahtzee/gameState.js';
+import { newGame as newConnectFourGame, dropPiece } from './games/connectFour/logic.js';
 import {
   recordGame, getStats, closeDb, saveSubscription, getSubscription, removeSubscription,
 } from './db.js';
@@ -16,20 +17,39 @@ import { publicKey as vapidPublicKey, sendPush } from './push.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const PORT = process.env.PORT || 3000;
+const DEFAULT_NAMES = ['Player 1', 'Player 2'];
 
-// --- Single shared game room -------------------------------------------------
-let game = newGame(['Player 1', 'Player 2']);
-let seats = [null, null]; // seats[i] = token | null
-const connections = new Map(); // ws -> { token }
+// --- Rooms --------------------------------------------------------------------
+// Each game gets its own independent room (seats, connections, game state) so
+// switching what you're playing never loses progress on the other game, and
+// "who's Player 1" is scoped per-game rather than global.
+const ROOM_FACTORIES = {
+  yahtzee: () => newYahtzeeGame(DEFAULT_NAMES),
+  connectFour: () => newConnectFourGame(DEFAULT_NAMES),
+};
 
-function seatForToken(token) {
-  return seats.indexOf(token);
+function createRoom(gameType) {
+  return {
+    gameType,
+    game: ROOM_FACTORIES[gameType](),
+    seats: [null, null], // seats[i] = token | null
+    connections: new Map(), // ws -> { token }
+  };
 }
 
-function seatHasLiveConnection(seatIndex) {
-  const seatToken = seats[seatIndex];
+const rooms = {
+  yahtzee: createRoom('yahtzee'),
+  connectFour: createRoom('connectFour'),
+};
+
+function seatForToken(room, token) {
+  return room.seats.indexOf(token);
+}
+
+function seatHasLiveConnection(room, seatIndex) {
+  const seatToken = room.seats[seatIndex];
   if (!seatToken) return false;
-  for (const conn of connections.values()) {
+  for (const conn of room.connections.values()) {
     if (conn.token === seatToken) return true;
   }
   return false;
@@ -39,40 +59,39 @@ function seatHasLiveConnection(seatIndex) {
 // a token with no currently-connected client (e.g. they closed the tab), that
 // stale seat is handed to the new token instead — so a dropped connection
 // doesn't permanently squat a seat, while an active player never gets bumped.
-function claimOpenSeat(token) {
-  const existing = seatForToken(token);
+function claimOpenSeat(room, token) {
+  const existing = seatForToken(room, token);
   if (existing !== -1) return existing;
-  let target = seats.indexOf(null);
+  let target = room.seats.indexOf(null);
   if (target === -1) {
-    target = seats.findIndex((_, i) => !seatHasLiveConnection(i));
+    target = room.seats.findIndex((_, i) => !seatHasLiveConnection(room, i));
   }
   if (target === -1) return -1;
-  seats[target] = token;
+  room.seats[target] = token;
   return target;
 }
 
-function resetRoom() {
-  seats = [null, null];
-  game = newGame(['Player 1', 'Player 2']);
+function resetRoom(room) {
+  room.seats = [null, null];
+  room.game = ROOM_FACTORIES[room.gameType]();
 }
 
-async function notifyTurn(game) {
-  const token = seats[game.currentPlayer];
+async function notifyTurn(room, title) {
+  const token = room.seats[room.game.currentPlayer];
   if (!token) return;
   const subscription = getSubscription(token);
   if (!subscription) return;
-  const name = game.players[game.currentPlayer].name;
-  const ok = await sendPush(subscription, { title: 'Yahtzee', body: `Your turn, ${name}!` });
+  const name = room.game.players[room.game.currentPlayer].name;
+  const ok = await sendPush(subscription, { title, body: `Your turn, ${name}!` });
   if (!ok) removeSubscription(token);
 }
 
-function publicState() {
+// --- Per-game client-state shaping ---------------------------------------------
+function yahtzeeClientState(game) {
   return {
     game: {
       players: game.players.map((p) => ({
-        name: p.name,
-        scorecard: p.scorecard,
-        summary: summarize(p.scorecard),
+        name: p.name, scorecard: p.scorecard, summary: summarize(p.scorecard),
       })),
       currentPlayer: game.currentPlayer,
       dice: game.dice,
@@ -84,18 +103,35 @@ function publicState() {
       log: game.log.slice(-5),
     },
     scoreOptions: getScoreOptions(game),
-    seatsTaken: seats.map((s) => s !== null),
   };
 }
 
-function broadcast() {
-  const shared = publicState();
-  for (const [ws, conn] of connections) {
+function connectFourClientState(game) {
+  return {
+    game: {
+      players: game.players.map((p) => ({ name: p.name })),
+      board: game.board,
+      currentPlayer: game.currentPlayer,
+      phase: game.phase,
+      winner: game.winner,
+      winningCells: game.winningCells,
+    },
+  };
+}
+
+function clientState(room) {
+  return room.gameType === 'yahtzee' ? yahtzeeClientState(room.game) : connectFourClientState(room.game);
+}
+
+function broadcast(room) {
+  const shared = clientState(room);
+  for (const [ws, conn] of room.connections) {
     if (ws.readyState !== ws.OPEN) continue;
-    const seat = seatForToken(conn.token);
+    const seat = seatForToken(room, conn.token);
     ws.send(JSON.stringify({
       type: 'state',
       ...shared,
+      seatsTaken: room.seats.map((s) => s !== null),
       you: { seat: seat === -1 ? null : seat, spectator: seat === -1 },
     }));
   }
@@ -115,7 +151,7 @@ const MIME = {
 
 function serveStatic(req, res) {
   let reqPath = req.url.split('?')[0];
-  if (reqPath === '/') reqPath = '/index.html';
+  if (reqPath === '/') reqPath = '/lobby.html';
   const filePath = path.join(PUBLIC_DIR, path.normalize(reqPath));
   if (!filePath.startsWith(PUBLIC_DIR)) {
     res.writeHead(403); res.end('Forbidden'); return;
@@ -191,35 +227,36 @@ const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
+  const roomName = url.searchParams.get('room') === 'connectFour' ? 'connectFour' : 'yahtzee';
+  const room = rooms[roomName];
   const requestedToken = url.searchParams.get('token');
   const token = requestedToken || crypto.randomUUID();
-  connections.set(ws, { token });
+  room.connections.set(ws, { token });
 
-  claimOpenSeat(token); // auto-claim an open seat on first connect, if any
-  const seat = seatForToken(token);
+  claimOpenSeat(room, token); // auto-claim an open seat on first connect, if any
   ws.send(JSON.stringify({ type: 'welcome', token }));
-  broadcast();
+  broadcast(room);
 
   ws.on('message', (raw) => {
     let msg;
     try { msg = JSON.parse(raw.toString()); } catch { return; }
-    const mySeat = seatForToken(token); // recomputed fresh each message; seats can change
+    const mySeat = seatForToken(room, token); // recomputed fresh each message; seats can change
 
     if (msg.type === 'claimSeat') {
-      if (claimOpenSeat(token) === -1) sendError(ws, 'No open seats.');
-      broadcast();
+      if (claimOpenSeat(room, token) === -1) sendError(ws, 'No open seats.');
+      broadcast(room);
       return;
     }
     if (msg.type === 'reinit') {
-      resetRoom();
-      claimOpenSeat(token); // whoever triggered it gets a seat back immediately
-      broadcast();
+      resetRoom(room);
+      claimOpenSeat(room, token); // whoever triggered it gets a seat back immediately
+      broadcast(room);
       return;
     }
     if (msg.type === 'setName' && mySeat !== -1) {
       const name = String(msg.name || '').trim().slice(0, 24);
-      if (name) game.players[mySeat].name = name;
-      broadcast();
+      if (name) room.game.players[mySeat].name = name;
+      broadcast(room);
       return;
     }
 
@@ -227,44 +264,56 @@ wss.on('connection', (ws, req) => {
       sendError(ws, 'You are spectating; no open seats.');
       return;
     }
-    if (mySeat !== game.currentPlayer && msg.type !== 'newGame') {
+    if (mySeat !== room.game.currentPlayer && msg.type !== 'newGame') {
       sendError(ws, "It's not your turn.");
       return;
     }
 
     try {
-      if (msg.type === 'roll') {
-        roll(game);
-      } else if (msg.type === 'toggleHold') {
-        toggleHold(game, msg.dieIndex);
-      } else if (msg.type === 'score') {
-        scoreCategory(game, msg.category);
-        if (game.phase === 'finished') {
-          recordGame(game, game.players.map((p) => summarize(p.scorecard)));
+      if (room.gameType === 'yahtzee') {
+        if (msg.type === 'roll') {
+          roll(room.game);
+        } else if (msg.type === 'toggleHold') {
+          toggleHold(room.game, msg.dieIndex);
+        } else if (msg.type === 'score') {
+          scoreCategory(room.game, msg.category);
+          if (room.game.phase === 'finished') {
+            recordGame(room.game, room.game.players.map((p) => summarize(p.scorecard)));
+          } else {
+            notifyTurn(room, 'Yahtzee'); // fire-and-forget — don't hold up the broadcast
+          }
+        } else if (msg.type === 'newGame') {
+          room.game = newYahtzeeGame(room.game.players.map((p) => p.name));
         } else {
-          notifyTurn(game); // fire-and-forget — don't hold up the broadcast on push delivery
+          sendError(ws, `Unknown message type: ${msg.type}`);
+          return;
         }
-      } else if (msg.type === 'newGame') {
-        game = newGame(game.players.map((p) => p.name));
-      } else {
-        sendError(ws, `Unknown message type: ${msg.type}`);
-        return;
+      } else if (room.gameType === 'connectFour') {
+        if (msg.type === 'drop') {
+          dropPiece(room.game, msg.column);
+          if (room.game.phase !== 'finished') notifyTurn(room, 'Connect Four');
+        } else if (msg.type === 'newGame') {
+          room.game = newConnectFourGame(room.game.players.map((p) => p.name));
+        } else {
+          sendError(ws, `Unknown message type: ${msg.type}`);
+          return;
+        }
       }
     } catch (err) {
       sendError(ws, err.message);
       return;
     }
-    broadcast();
+    broadcast(room);
   });
 
   ws.on('close', () => {
-    connections.delete(ws);
-    broadcast();
+    room.connections.delete(ws);
+    broadcast(room);
   });
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Yahtzee server running on port ${PORT}`);
+  console.log(`Game server running on port ${PORT}`);
   const nets = os.networkInterfaces();
   console.log('Open this on both devices (same Wi-Fi network):');
   for (const iface of Object.values(nets)) {
@@ -280,7 +329,9 @@ server.listen(PORT, '0.0.0.0', () => {
 function shutdown(signal) {
   console.log(`\nReceived ${signal}, shutting down...`);
   const forceExit = setTimeout(() => process.exit(1), 3000);
-  for (const ws of connections.keys()) ws.close(1001, 'Server restarting');
+  for (const room of Object.values(rooms)) {
+    for (const ws of room.connections.keys()) ws.close(1001, 'Server restarting');
+  }
   wss.close(() => {
     server.close(() => {
       closeDb();

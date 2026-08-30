@@ -16,7 +16,10 @@ const SERVER_PATH = path.join(__dirname, '..', 'server.js');
 const TEST_DB = path.join(__dirname, 'tmp-server-test.db');
 const PORT = 39871;
 const BASE_URL = `http://localhost:${PORT}`;
-const WS_URL = `ws://localhost:${PORT}/`;
+
+function wsUrl(room) {
+  return `ws://localhost:${PORT}/${room ? `?room=${room}` : ''}`;
+}
 
 let serverProcess;
 
@@ -24,7 +27,7 @@ async function waitForReady(timeoutMs = 5000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
-      const res = await fetch(BASE_URL);
+      const res = await fetch(`${BASE_URL}/api/stats`); // a stable API route, not a static file that may not exist
       if (res.ok) return;
     } catch {
       // not up yet
@@ -52,9 +55,9 @@ test.after(async () => {
   fs.rmSync(TEST_DB, { force: true });
 });
 
-function connect() {
+function connect(room) {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(WS_URL);
+    const ws = new WebSocket(wsUrl(room));
     ws.once('open', () => resolve(ws));
     ws.once('error', reject);
   });
@@ -83,19 +86,19 @@ function send(ws, payload) {
   ws.send(JSON.stringify(payload));
 }
 
-async function connectTracked() {
-  const ws = await connect();
+async function connectTracked(room) {
+  const ws = await connect(room);
   return { ws, q: trackMessages(ws) };
 }
 
 // Connects two clients and drains every handshake message each of them
 // receives — including the extra broadcast the FIRST client gets when the
 // SECOND one joins — so both queues start the test empty and in sync.
-async function seatedPair() {
-  const a = await connectTracked();
+async function seatedPair(room) {
+  const a = await connectTracked(room);
   await a.q.next(); // welcome
   await a.q.next(); // state: seated alone
-  const b = await connectTracked();
+  const b = await connectTracked(room);
   await a.q.next(); // state: b joining broadcasts to a too
   await b.q.next(); // welcome
   await b.q.next(); // state: seated
@@ -218,6 +221,64 @@ test('a finished game is persisted and shows up in /api/stats', async () => {
     const stats = await fetch(`${BASE_URL}/api/stats`).then((r) => r.json());
     assert.ok(stats.players.length >= 2);
     assert.ok(stats.recentGames.length >= 2); // one row per player for the finished game
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});
+
+// --- Connect Four room: mostly protocol/routing checks — the win-detection
+// logic itself is covered exhaustively in test/games/connectFour.logic.test.js.
+
+test('connectFour and yahtzee are independent rooms — same names, different seats', async () => {
+  const [a, b] = await seatedPair('connectFour');
+  try {
+    send(a.ws, { type: 'drop', column: 3 });
+    const [state] = await Promise.all([a.q.next(), b.q.next()]);
+    assert.equal(state.game.board[5][3], 0); // dropped to the bottom row
+    assert.equal(state.game.currentPlayer, 1);
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});
+
+test('connectFour: acting out of turn is rejected', async () => {
+  const [a, b] = await seatedPair('connectFour');
+  try {
+    send(a.ws, { type: 'reinit' }); // guarantee it's seat 0's turn, regardless of prior tests' board state
+    await a.q.next(); await b.q.next();
+    send(b.ws, { type: 'claimSeat' });
+    await Promise.all([a.q.next(), b.q.next()]);
+
+    send(b.ws, { type: 'drop', column: 0 }); // seat 1, but seat 0 goes first
+    const msg = await b.q.next();
+    assert.equal(msg.type, 'error');
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});
+
+test('connectFour: a full game (vertical win) reaches phase finished', async () => {
+  const [a, b] = await seatedPair('connectFour');
+  try {
+    send(a.ws, { type: 'reinit' }); // clean board for this test
+    await a.q.next(); await b.q.next();
+    send(b.ws, { type: 'claimSeat' });
+    await Promise.all([a.q.next(), b.q.next()]);
+
+    const clients = [a, b];
+    let state;
+    // Player 0 stacks column 0 four times; player 1 plays column 1 in between
+    // (irrelevant to the win) so turn order stays legal throughout.
+    const moves = [[0, 0], [1, 1], [0, 0], [1, 1], [0, 0], [1, 1], [0, 0]];
+    for (const [seat, column] of moves) {
+      const client = clients[seat];
+      const other = clients[1 - seat];
+      send(client.ws, { type: 'drop', column });
+      [state] = await Promise.all([client.q.next(), other.q.next()]);
+      if (state.game.phase === 'finished') break;
+    }
+    assert.equal(state.game.phase, 'finished');
+    assert.equal(state.game.winner, 0);
   } finally {
     a.ws.close(); b.ws.close();
   }

@@ -20,7 +20,12 @@ function themeButtonHtml() {
   return `<button id="theme-btn" class="icon-btn" title="Switch to ${dark ? 'light' : 'dark'} mode" aria-label="Toggle theme">${dark ? '☀' : '🌙'}</button>`;
 }
 function themeToggleHtml() {
-  return `<div class="header-icon-group">${themeButtonHtml()}</div>`;
+  return `
+    <div class="header-icon-group">
+      ${themeButtonHtml()}
+      <a href="/" class="icon-btn" title="Game lobby" aria-label="Game lobby">🏠</a>
+    </div>
+  `;
 }
 function bindThemeToggle() {
   document.getElementById('theme-btn')?.addEventListener('click', () => {
@@ -53,7 +58,7 @@ function render(stats) {
       <div class="header-row">
         ${themeToggleHtml()}
         <h1>Stats</h1>
-        <div class="header-icon-group"><a href="/" class="icon-btn" title="Back to game" aria-label="Back to game">&larr;</a></div>
+        <div class="header-icon-group"><a href="/yahtzee.html" class="icon-btn" title="Back to Yahtzee" aria-label="Back to Yahtzee">&larr;</a></div>
       </div>
     </header>
     <div class="stats-wrap">

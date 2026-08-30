@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   newGame, roll, toggleHold, getScoreOptions, scoreCategory, rollDie,
-} from '../game/gameState.js';
+} from '../../games/yahtzee/gameState.js';
 
 function forceDice(game, dice) {
   game.dice = [...dice];

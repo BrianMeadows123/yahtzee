@@ -41,9 +41,18 @@ function effectiveTheme() {
   return theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 }
 
-function themeToggleHtml() {
+function themeButtonHtml() {
   const dark = effectiveTheme() === 'dark';
-  return `<div class="header-icon-group"><button id="theme-btn" class="icon-btn" title="Switch to ${dark ? 'light' : 'dark'} mode" aria-label="Toggle theme">${dark ? '☀' : '🌙'}</button></div>`;
+  return `<button id="theme-btn" class="icon-btn" title="Switch to ${dark ? 'light' : 'dark'} mode" aria-label="Toggle theme">${dark ? '☀' : '🌙'}</button>`;
+}
+
+function leftHeaderIconsHtml() {
+  return `
+    <div class="header-icon-group">
+      ${themeButtonHtml()}
+      <a href="/" class="icon-btn" title="Game lobby" aria-label="Game lobby">🏠</a>
+    </div>
+  `;
 }
 
 function bindThemeToggle() {
@@ -154,7 +163,7 @@ function animateDiceRoll(held) {
 }
 
 const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-const wsUrl = `${proto}//${location.host}/${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+const wsUrl = `${proto}//${location.host}/?room=yahtzee${token ? `&token=${encodeURIComponent(token)}` : ''}`;
 let ws;
 
 function connect() {
@@ -228,7 +237,7 @@ function render() {
   app.innerHTML = `
     <header>
       <div class="header-row">
-        ${themeToggleHtml()}
+        ${leftHeaderIconsHtml()}
         <h1>Yahtzee</h1>
         <div class="header-icon-group">
           ${pushButtonHtml()}
@@ -392,7 +401,7 @@ function renderFinished(game) {
   app.innerHTML = `
     <header>
       <div class="header-row">
-        ${themeToggleHtml()}
+        ${leftHeaderIconsHtml()}
         <h1>Yahtzee</h1>
         <div class="header-icon-group">
           ${pushButtonHtml()}

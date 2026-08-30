@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   naturalScore, upperBonus, grandTotal, emptyScorecard, isScorecardComplete,
-} from '../game/scoring.js';
+} from '../../games/yahtzee/scoring.js';
 
 test('upper section scores count only matching dice', () => {
   assert.equal(naturalScore('fours', [4, 4, 2, 4, 6]), 12);
