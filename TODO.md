@@ -2,12 +2,18 @@
 
 ## Getting her set up
 - [ ] She installs Tailscale and accepts the tailnet invite
-- [ ] She opens `https://weplayyahtzee.tail660078.ts.net` in Safari and adds it to her home screen
+- [ ] She opens `https://bmeadows-desktop.tail660078.ts.net` in Safari and adds it to her home screen (hostname changed back from `weplayyahtzee` on purpose — instructions file updated to match)
 - [ ] First real game together, both devices, to confirm it actually works end to end
 
 ## Loose ends
 - [x] Remove the `brain.net` search domain in the Tailscale admin console
-- [ ] Double check `tailscale serve status` doesn't have a stray orphaned entry under the old hostname (harmless, but worth cleaning up eventually)
+- [x] Diagnosed "refused to connect" on phone — the `weplayyahtzee` hostname/URL was dead after the device was renamed back to `bmeadows-desktop`; serve config and instructions file now point at the current name
+- [x] Confirmed the orphaned `weplayyahtzee` entry in `tailscale serve status` is inert (dead hostname, can't route real traffic) — can't be removed via CLI since it belongs to the old node identity, not worth chasing further
+
+## Design follow-ups (sketch-ups before implementing)
+- [ ] Fix flat visual hierarchy — everything (dice, buttons, cards, tiles, toggle) uses the same border/shadow weight, so nothing besides "Roll dice" clearly reads as the primary action
+- [ ] Reduce header chrome before gameplay — title, theme toggle, reset link, turn banner, waiting text, and player tiles all stack above the dice; consider de-emphasizing toggle/reset since they're used once a session, not every turn
+- [ ] Teal is reused for scoreboard total, every entered score, and the grand total — only difference is font size. Brian doesn't see this as a problem currently, but wants a sketch-up explored anyway
 
 ## Done: feel/redesign pass
 - [x] Dice "rolling" animation (tumble/spin before settling on result)
