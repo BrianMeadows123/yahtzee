@@ -1,14 +1,8 @@
 # Yahtzee
 
-A from-scratch, two-device Yahtzee clone built to play over the web — one host machine, two browsers, real-time sync. No accounts, no database, just open a link and roll.
+A Yahtzee game I built so my girlfriend and I could play from our phones (one iPhone, one Android) without installing anything. It runs as a small web server, real-time over WebSockets, so both people see rolls and scores update live on separate devices.
 
-## Features
-
-- Full official Yahtzee rules: upper/lower sections, upper bonus (63+), Yahtzee bonus, and the joker rule for extra Yahtzees
-- Real-time two-player sync over WebSockets — works across separate devices (tested iPhone + Android) on the same network or remotely via [Tailscale](https://tailscale.com/)
-- Cryptographically secure dice rolls (`node:crypto`, not `Math.random()`)
-- Reconnect-safe seating — a dropped connection doesn't permanently occupy a seat, and a "reset room" option is always available
-- Pencil-and-paper scorecard aesthetic with realistic dice
+Follows the actual Yahtzee rules, including the joker rule for extra Yahtzees, which most quick clones online skip or get wrong.
 
 ## Running it
 
@@ -17,7 +11,7 @@ npm install
 npm start
 ```
 
-The server prints the local and LAN addresses to open on each device. For remote play across networks (not just the same Wi-Fi), put it behind something like Tailscale.
+It'll print out addresses to open on each device. If you want to play from different networks (not just the same wifi), stick it behind Tailscale or something similar.
 
 ## Tests
 
@@ -25,17 +19,17 @@ The server prints the local and LAN addresses to open on each device. For remote
 npm test
 ```
 
-Covers scoring rules and full turn/game state flow, including joker-rule edge cases.
+Covers the scoring rules and the turn/game flow, including the joker rule edge cases since those are the easiest part to get wrong.
 
 ## Stack
 
-Plain Node.js (`node:http`, `ws`) on the server, no framework; vanilla JS/CSS on the client. No build step.
+Just Node (`node:http`, `ws`), no framework, no build step. Plain JS/CSS on the frontend.
 
-## Built with AI
+## About the build
 
-This project was coded with [Claude](https://claude.com/claude-code) (Anthropic), from game logic through multiplayer networking to UI, in collaboration with the repo owner.
+I built this with Claude doing most of the actual coding — game logic, the multiplayer/networking side, and the UI — while I drove requirements and testing. Wanted to be upfront about that rather than pretend otherwise.
 
 ## Contributors
 
 - Brian Meadows ([@BrianMeadows123](https://github.com/BrianMeadows123))
-- [Claude](https://claude.com/claude-code) (Anthropic) — AI pair programmer
+- Claude (Anthropic) — did the coding
