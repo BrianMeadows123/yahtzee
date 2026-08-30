@@ -2,7 +2,6 @@
 
 :root {
   --felt-dark: #e0c284;
-  --felt-light: #cdaa66;
   --panel: #f8efd8;
   --ink: #201709;
   --ink-soft: #4a3a24;
@@ -16,7 +15,6 @@
 @media (prefers-color-scheme: dark) {
   body:not([data-theme="light"]) {
     --felt-dark: #140d08;
-    --felt-light: #3a2a1a;
     --panel: #241a10;
     --ink: #f1e0b8;
     --ink-soft: #d8c69a;
@@ -29,7 +27,6 @@
 }
 body[data-theme="dark"] {
   --felt-dark: #140d08;
-  --felt-light: #3a2a1a;
   --panel: #241a10;
   --ink: #f1e0b8;
   --ink-soft: #d8c69a;
@@ -47,8 +44,6 @@ body {
   padding: 14px;
   padding-bottom: 60px;
   background-color: var(--felt-dark);
-  background-image: radial-gradient(var(--felt-light) 1.6px, transparent 1.6px);
-  background-size: 15px 15px;
   background-attachment: fixed;
   min-height: 100vh;
   transition: color 0.2s ease;
