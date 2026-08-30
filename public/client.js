@@ -32,23 +32,21 @@ function pipGridHtml(value) {
   return Array.from({ length: 9 }, (_, i) => `<span class="pip ${active.has(i + 1) ? 'on' : ''}"></span>`).join('');
 }
 
+function effectiveTheme() {
+  return theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+}
+
 function themeToggleHtml() {
-  return `
-    <div class="theme-toggle" role="group" aria-label="Light or dark mode">
-      <button class="theme-opt ${theme === 'light' ? 'active' : ''}" data-theme-choice="light">Light</button>
-      <button class="theme-opt ${theme === 'dark' ? 'active' : ''}" data-theme-choice="dark">Dark</button>
-    </div>
-  `;
+  const dark = effectiveTheme() === 'dark';
+  return `<button id="theme-btn" class="icon-btn" title="Switch to ${dark ? 'light' : 'dark'} mode" aria-label="Toggle theme">${dark ? '☀' : '🌙'}</button>`;
 }
 
 function bindThemeToggle() {
-  document.querySelectorAll('.theme-opt').forEach((el) => {
-    el.addEventListener('click', () => {
-      theme = el.dataset.themeChoice;
-      document.body.dataset.theme = theme;
-      localStorage.setItem('yahtzee-theme', theme);
-      render();
-    });
+  document.getElementById('theme-btn')?.addEventListener('click', () => {
+    theme = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    document.body.dataset.theme = theme;
+    localStorage.setItem('yahtzee-theme', theme);
+    render();
   });
 }
 
@@ -159,17 +157,17 @@ function render() {
   app.innerHTML = `
     <header>
       <div class="header-row">
-        <h1>Yahtzee</h1>
-      </div>
-      <div class="header-controls">
         ${themeToggleHtml()}
-        <button id="reset-btn" class="link-btn">Reset room</button>
+        <h1>Yahtzee</h1>
+        <button id="reset-btn" class="icon-btn" title="Reset room" aria-label="Reset room">↺</button>
       </div>
-      <div class="turn-banner ${myTurn ? 'my-turn' : ''}">
-        ${isSpectator ? 'Spectating' : myTurn ? "Your turn" : `Waiting for ${game.players[game.currentPlayer].name}`}
+      <div class="status-line">
+        <span class="turn-banner ${myTurn ? 'my-turn' : ''}">
+          ${isSpectator ? 'Spectating' : myTurn ? "Your turn" : `Waiting for ${game.players[game.currentPlayer].name}`}
+        </span>
+        ${!isSpectator && hasOpenSeat ? '<span class="status-sub">seat open</span>' : ''}
       </div>
       ${isSpectator && hasOpenSeat ? '<button id="join-btn">Join game</button>' : ''}
-      ${!isSpectator && hasOpenSeat ? '<div class="waiting">Waiting for second player to join…</div>' : ''}
     </header>
 
     <section class="scoreboard">
@@ -296,11 +294,9 @@ function renderFinished(game) {
   app.innerHTML = `
     <header>
       <div class="header-row">
-        <h1>Yahtzee</h1>
-      </div>
-      <div class="header-controls">
         ${themeToggleHtml()}
-        <button id="reset-btn" class="link-btn">Reset room</button>
+        <h1>Yahtzee</h1>
+        <button id="reset-btn" class="icon-btn" title="Reset room" aria-label="Reset room">↺</button>
       </div>
     </header>
     <div class="center">

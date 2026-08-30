@@ -49,40 +49,30 @@ body {
   transition: color 0.2s ease;
 }
 
-header { text-align: center; margin-bottom: 14px; }
-.header-row { display: flex; align-items: center; justify-content: center; }
+header { text-align: center; margin-bottom: 10px; }
+.header-row { display: flex; align-items: center; justify-content: space-between; }
 h1 {
-  margin: 4px 0;
+  margin: 0;
   font-family: 'Alfa Slab One', cursive;
-  font-size: 2.4rem;
+  font-size: 2rem;
   letter-spacing: 1px;
   color: var(--ink);
   text-shadow: 3px 3px 0 var(--mustard);
 }
 
-.header-controls {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  flex-wrap: wrap; margin-top: 6px;
+.icon-btn {
+  width: 34px; height: 34px; padding: 0; border-radius: 50%;
+  border: 2px solid var(--ink); background: var(--panel); color: var(--ink);
+  font-size: 1rem; box-shadow: none; flex-shrink: 0;
 }
-.theme-toggle {
-  display: flex; align-items: center; gap: 2px;
-  border: 2px solid var(--ink); border-radius: 999px; padding: 3px;
-}
-.theme-opt {
-  padding: 4px 10px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;
-  border-radius: 999px; border: none; background: none; color: var(--ink); box-shadow: none;
-}
-.theme-opt.active { background: var(--mustard); color: var(--ink); }
-.theme-opt:active { transform: none; }
+.icon-btn:active { transform: translate(1px, 1px); }
 
-.link-btn {
-  background: none; color: var(--rust); font-family: 'Poppins', sans-serif;
-  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px;
-  padding: 6px 8px; text-decoration: underline; box-shadow: none;
+.status-line {
+  display: flex; align-items: baseline; justify-content: center; gap: 8px;
+  margin-top: 10px; flex-wrap: wrap;
 }
-
 .turn-banner {
-  display: inline-block; margin-top: 10px;
+  display: inline-block;
   padding: 7px 18px; border-radius: 999px;
   background: var(--panel); color: var(--ink);
   border: 2.5px solid var(--ink);
@@ -90,7 +80,7 @@ h1 {
   box-shadow: 3px 3px 0 var(--ink);
 }
 .turn-banner.my-turn { background: var(--mustard); }
-.waiting { margin-top: 8px; color: var(--mustard); font-size: 0.85rem; font-family: 'Poppins', sans-serif; font-weight: 600; }
+.status-sub { color: var(--rust); font-size: 0.78rem; font-weight: 600; }
 
 /* --- Scoreboard: compact running-total strip --- */
 .scoreboard {
