@@ -97,6 +97,7 @@ const MIME = {
   '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css',
   '.json': 'application/json', '.svg': 'image/svg+xml',
   '.mp3': 'audio/mpeg', '.wav': 'audio/wav',
+  '.png': 'image/png', '.ico': 'image/x-icon',
 };
 
 function serveStatic(req, res) {

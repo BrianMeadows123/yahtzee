@@ -15,6 +15,10 @@ const UPPER = ['ones', 'twos', 'threes', 'fours', 'fives', 'sixes'];
 const LOWER = ['threeOfAKind', 'fourOfAKind', 'fullHouse', 'smallStraight', 'largeStraight', 'yahtzee', 'chance'];
 const SCORE_CONFIRM_TIMEOUT = 4000;
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
 const app = document.getElementById('app');
 
 let token = localStorage.getItem('yahtzee-token');
