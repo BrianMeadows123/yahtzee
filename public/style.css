@@ -1,8 +1,8 @@
 * { box-sizing: border-box; }
 
 :root {
-  --felt-dark: #0d3d2b;
-  --felt-light: #145c3f;
+  --felt-dark: #333a1c;
+  --felt-light: #6c7a35;
   --panel: #f8efd8;
   --ink: #201709;
   --ink-soft: #4a3a24;
@@ -12,9 +12,9 @@
   --avocado: #74803c;
   --line: rgba(32, 23, 9, 0.16);
 }
-body[data-felt="blue"] { --felt-dark: #0a1f38; --felt-light: #17406e; }
-body[data-felt="red"] { --felt-dark: #360a0f; --felt-light: #6e1620; }
-body[data-felt="black"] { --felt-dark: #050505; --felt-light: #272727; }
+body[data-felt="teal"] { --felt-dark: #0f2e2b; --felt-light: #1c6e68; }
+body[data-felt="rust"] { --felt-dark: #3a150c; --felt-light: #c1502a; }
+body[data-felt="espresso"] { --felt-dark: #140d08; --felt-light: #3a2a1a; }
 
 @media (prefers-color-scheme: dark) {
   body:not([data-theme="light"]) {
@@ -75,10 +75,10 @@ h1 {
 }
 .felt-swatch:active { transform: none; }
 .felt-swatch.active { border-color: #ffd54f; }
-.felt-swatch.felt-green { background: #145c3f; }
-.felt-swatch.felt-blue { background: #17406e; }
-.felt-swatch.felt-red { background: #6e1620; }
-.felt-swatch.felt-black { background: #272727; }
+.felt-swatch.felt-avocado { background: #6c7a35; }
+.felt-swatch.felt-teal { background: #1c6e68; }
+.felt-swatch.felt-rust { background: #c1502a; }
+.felt-swatch.felt-espresso { background: #3a2a1a; }
 
 .theme-toggle {
   display: flex; align-items: center; gap: 2px;

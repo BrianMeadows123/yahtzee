@@ -32,7 +32,7 @@ I built this with Claude doing most of the actual coding — game logic, the mul
 ## Sound credits
 
 - "Pencil Scribble (9)" by JellyDaisies — [freesound.org/s/761665](https://freesound.org/s/761665/) — Creative Commons 0
-- "Dice Throw Roll on Board Game Playing Board" (1, 2, 3) and "Dice Shaker, Shake with 3 Dice Inside" — [Zapsplat.com](https://www.zapsplat.com/)
+- "Dice Throw Roll on Board Game Playing Board" (1, 2, 3) — [Zapsplat.com](https://www.zapsplat.com/)
 
 ## Contributors
 

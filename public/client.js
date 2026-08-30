@@ -24,8 +24,8 @@ let latest = null;
 let armedCategory = null;
 let armTimer = null;
 
-const FELT_COLORS = ['green', 'blue', 'red', 'black'];
-let feltColor = localStorage.getItem('yahtzee-felt') || 'green';
+const FELT_COLORS = ['avocado', 'teal', 'rust', 'espresso'];
+let feltColor = localStorage.getItem('yahtzee-felt') || 'avocado';
 document.body.dataset.felt = feltColor;
 
 let theme = localStorage.getItem('yahtzee-theme'); // 'light' | 'dark' | null (system default)
@@ -79,8 +79,8 @@ function playSound(src) {
   const audio = new Audio(src);
   audio.play().catch(() => {});
 }
-function playRollSound(isFirstRoll) {
-  playSound(isFirstRoll ? '/sounds/shake.mp3' : `/sounds/roll-${1 + Math.floor(Math.random() * 3)}.mp3`);
+function playRollSound() {
+  playSound(`/sounds/roll-${1 + Math.floor(Math.random() * 3)}.mp3`);
 }
 function playScratchSound() {
   playSound('/sounds/scratch.wav');
@@ -138,7 +138,7 @@ function connect() {
         && msg.game.rollsRemaining < prevGame.rollsRemaining;
       render();
       if (firstRollOfTurn || reroll) {
-        playRollSound(firstRollOfTurn);
+        playRollSound();
         animateDiceRoll(msg.game.held);
       }
     } else if (msg.type === 'error') {
