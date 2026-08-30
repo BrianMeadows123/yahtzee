@@ -10,6 +10,11 @@
   --teal: #1c6e68;
   --avocado: #74803c;
   --line: rgba(32, 23, 9, 0.16);
+  /* Chart-mark colors: validated separately from the UI accents above (dataviz
+     skill) since --teal reads too gray at the chroma floor for a data mark. */
+  --chart-1: #d1571f;
+  --chart-2: #0e9e8c;
+  --chart-surface: #f8efd8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,6 +28,9 @@
     --teal: #2e9891;
     --avocado: #8fa355;
     --line: rgba(241, 224, 184, 0.14);
+    --chart-1: #e2673f;
+    --chart-2: #189485;
+    --chart-surface: #241a10;
   }
 }
 body[data-theme="dark"] {
@@ -35,6 +43,9 @@ body[data-theme="dark"] {
   --teal: #2e9891;
   --avocado: #8fa355;
   --line: rgba(241, 224, 184, 0.14);
+  --chart-1: #e2673f;
+  --chart-2: #189485;
+  --chart-surface: #241a10;
 }
 
 body {
@@ -50,7 +61,9 @@ body {
 }
 
 header { text-align: center; margin-bottom: 10px; }
-.header-row { display: flex; align-items: center; justify-content: space-between; }
+.header-row { display: flex; align-items: center; }
+.header-row > *:first-child { flex: 1; }
+.header-row > *:last-child { flex: 1; display: flex; justify-content: flex-end; }
 h1 {
   margin: 0;
   font-family: 'Alfa Slab One', cursive;
@@ -64,8 +77,10 @@ h1 {
   width: 34px; height: 34px; padding: 0; border-radius: 50%;
   border: 2px solid var(--ink); background: var(--panel); color: var(--ink);
   font-size: 1rem; box-shadow: none; flex-shrink: 0;
+  display: grid; place-items: center; text-decoration: none;
 }
 .icon-btn:active { transform: translate(1px, 1px); }
+.header-icon-group { display: flex; gap: 6px; }
 
 .status-line {
   display: flex; align-items: baseline; justify-content: center; gap: 8px;
@@ -239,3 +254,54 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 @media (min-width: 700px) {
   .scorecards { flex-wrap: nowrap; }
 }
+
+/* --- Stats page --- */
+.stats-wrap { max-width: 720px; margin: 0 auto; }
+.stats-empty {
+  text-align: center; color: var(--ink-soft); font-size: 0.95rem;
+  padding: 40px 20px; background: var(--panel); border-radius: 10px;
+  border: 1.5px solid var(--ink-soft);
+}
+
+.stat-tiles { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+.stat-tile {
+  flex: 1; min-width: 140px; background: var(--panel); border-radius: 10px;
+  border: 2px solid var(--ink); padding: 12px 16px; box-shadow: 4px 4px 0 var(--ink);
+}
+.stat-tile .stat-name {
+  font-family: 'Alfa Slab One', cursive; font-size: 0.95rem; color: var(--ink); margin-bottom: 8px;
+}
+.stat-tile .stat-row {
+  display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--ink-soft);
+  padding: 2px 0;
+}
+.stat-tile .stat-row b { color: var(--ink); font-weight: 700; }
+
+.chart-card {
+  background: var(--panel); border-radius: 10px; border: 1.5px solid var(--ink-soft);
+  padding: 16px; margin-bottom: 20px;
+}
+.chart-card h2 {
+  font-family: 'Alfa Slab One', cursive; font-weight: 400; font-size: 1rem;
+  color: var(--ink); margin: 0 0 4px;
+}
+.chart-card .chart-sub { font-size: 0.72rem; color: var(--ink-soft); margin: 0 0 12px; }
+.chart-legend { display: flex; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+.chart-legend .key { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--ink-soft); font-weight: 600; }
+.chart-legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+.chart-svg-wrap { position: relative; }
+.chart-tooltip {
+  position: absolute; pointer-events: none; background: var(--ink); color: var(--panel);
+  font-size: 0.7rem; font-weight: 600; padding: 4px 8px; border-radius: 5px;
+  transform: translate(-50%, -115%); white-space: nowrap; opacity: 0; transition: opacity 0.1s ease;
+  font-family: 'Poppins', sans-serif;
+}
+.chart-tooltip.show { opacity: 1; }
+
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.stats-table th, .stats-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.stats-table th { color: var(--ink-soft); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.4px; }
+.stats-table td { color: var(--ink); font-variant-numeric: tabular-nums; }
+.stats-table .win { color: var(--avocado); font-weight: 700; }
+.table-scroll { overflow-x: auto; }

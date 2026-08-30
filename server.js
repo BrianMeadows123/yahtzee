@@ -8,6 +8,7 @@ import { WebSocketServer } from 'ws';
 import {
   newGame, roll, toggleHold, scoreCategory, getScoreOptions, summarize,
 } from './game/gameState.js';
+import { recordGame, getStats } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -113,7 +114,17 @@ function serveStatic(req, res) {
   });
 }
 
-const server = http.createServer(serveStatic);
+function handleRequest(req, res) {
+  const reqPath = req.url.split('?')[0];
+  if (reqPath === '/api/stats') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(getStats()));
+    return;
+  }
+  serveStatic(req, res);
+}
+
+const server = http.createServer(handleRequest);
 const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws, req) => {
@@ -166,6 +177,9 @@ wss.on('connection', (ws, req) => {
         toggleHold(game, msg.dieIndex);
       } else if (msg.type === 'score') {
         scoreCategory(game, msg.category);
+        if (game.phase === 'finished') {
+          recordGame(game, game.players.map((p) => summarize(p.scorecard)));
+        }
       } else if (msg.type === 'newGame') {
         game = newGame(game.players.map((p) => p.name));
       } else {

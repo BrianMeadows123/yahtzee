@@ -22,6 +22,11 @@
 - [x] Condensed header (sketched up first): theme toggle + reset room collapsed into corner icon buttons, turn banner + waiting text merged into one status line
 - [x] Total color differentiation (sketched up first): teal = entered score, muted ink = subtotal math, avocado = any grand/running total
 
+## Done: stats & history
+- [x] Persist every finished game to a local SQLite DB (`node:sqlite`, no new dependency), grouped by player name so stats follow a person across games regardless of seat
+- [x] `/stats.html` dashboard: win/loss record + avg score + bonus rates per player, a score-trend line chart, an average-score-per-category bar chart, and a recent-games table
+- [x] Chart colors validated for colorblind-safe separation (dataviz skill's `validate_palette.js`) rather than reused verbatim from the UI's muted teal/rust — those read too gray as chart marks
+- [x] Linked from the main game header (📊 icon)
+
 ## Possible next polish (not started, just ideas)
 - [ ] Win/lose animation on the finished screen
-- [ ] Score history across multiple games (currently resets every game)

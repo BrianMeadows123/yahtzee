@@ -159,7 +159,10 @@ function render() {
       <div class="header-row">
         ${themeToggleHtml()}
         <h1>Yahtzee</h1>
-        <button id="reset-btn" class="icon-btn" title="Reset room" aria-label="Reset room">↺</button>
+        <div class="header-icon-group">
+          <a href="/stats.html" class="icon-btn" title="Stats" aria-label="Stats">📊</a>
+          <button id="reset-btn" class="icon-btn" title="Reset room" aria-label="Reset room">↺</button>
+        </div>
       </div>
       <div class="status-line">
         <span class="turn-banner ${myTurn ? 'my-turn' : ''}">
@@ -296,7 +299,10 @@ function renderFinished(game) {
       <div class="header-row">
         ${themeToggleHtml()}
         <h1>Yahtzee</h1>
-        <button id="reset-btn" class="icon-btn" title="Reset room" aria-label="Reset room">↺</button>
+        <div class="header-icon-group">
+          <a href="/stats.html" class="icon-btn" title="Stats" aria-label="Stats">📊</a>
+          <button id="reset-btn" class="icon-btn" title="Reset room" aria-label="Reset room">↺</button>
+        </div>
       </div>
     </header>
     <div class="center">

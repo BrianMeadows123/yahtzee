@@ -23,7 +23,11 @@ Covers the scoring rules and the turn/game flow, including the joker rule edge c
 
 ## Stack
 
-Just Node (`node:http`, `ws`), no framework, no build step. Plain JS/CSS on the frontend.
+Just Node (`node:http`, `node:sqlite`, `ws`), no framework, no build step. Plain JS/CSS on the frontend.
+
+## Stats
+
+Every finished game gets saved to a local SQLite file (`data/yahtzee.db`, gitignored — it's runtime data, not source). There's a `/stats.html` page with a score trend line chart, an average-score-per-category bar chart, win/loss records, and a recent-games table, grouped by player name rather than seat since whoever connects first becomes "Player 1" on a given day.
 
 ## About the build
 
