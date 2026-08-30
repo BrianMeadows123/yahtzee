@@ -8,7 +8,7 @@ import { WebSocketServer } from 'ws';
 import {
   newGame, roll, toggleHold, scoreCategory, getScoreOptions, summarize,
 } from './game/gameState.js';
-import { recordGame, getStats } from './db.js';
+import { recordGame, getStats, closeDb } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -212,3 +212,18 @@ server.listen(PORT, '0.0.0.0', () => {
   }
   console.log(`  http://localhost:${PORT} (this machine only)`);
 });
+
+function shutdown(signal) {
+  console.log(`\nReceived ${signal}, shutting down...`);
+  const forceExit = setTimeout(() => process.exit(1), 3000);
+  for (const ws of connections.keys()) ws.close(1001, 'Server restarting');
+  wss.close(() => {
+    server.close(() => {
+      closeDb();
+      clearTimeout(forceExit);
+      process.exit(0);
+    });
+  });
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

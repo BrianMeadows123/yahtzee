@@ -101,3 +101,7 @@ export function getStats() {
 
   return { players, categoryAverages, trend, recentGames };
 }
+
+export function closeDb() {
+  db.close();
+}
