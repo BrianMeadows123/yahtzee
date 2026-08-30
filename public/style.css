@@ -1,8 +1,8 @@
 * { box-sizing: border-box; }
 
 :root {
-  --felt-dark: #140d08;
-  --felt-light: #3a2a1a;
+  --felt-dark: #e0c284;
+  --felt-light: #cdaa66;
   --panel: #f8efd8;
   --ink: #201709;
   --ink-soft: #4a3a24;
@@ -15,6 +15,8 @@
 
 @media (prefers-color-scheme: dark) {
   body:not([data-theme="light"]) {
+    --felt-dark: #140d08;
+    --felt-light: #3a2a1a;
     --panel: #241a10;
     --ink: #f1e0b8;
     --ink-soft: #d8c69a;
@@ -26,6 +28,8 @@
   }
 }
 body[data-theme="dark"] {
+  --felt-dark: #140d08;
+  --felt-light: #3a2a1a;
   --panel: #241a10;
   --ink: #f1e0b8;
   --ink-soft: #d8c69a;
@@ -57,7 +61,7 @@ h1 {
   font-family: 'Alfa Slab One', cursive;
   font-size: 2.4rem;
   letter-spacing: 1px;
-  color: #fdf6e3;
+  color: var(--ink);
   text-shadow: 3px 3px 0 var(--mustard);
 }
 
@@ -67,17 +71,17 @@ h1 {
 }
 .theme-toggle {
   display: flex; align-items: center; gap: 2px;
-  border: 2px solid rgba(253, 246, 227, 0.5); border-radius: 999px; padding: 3px;
+  border: 2px solid var(--ink); border-radius: 999px; padding: 3px;
 }
 .theme-opt {
   padding: 4px 10px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.3px;
-  border-radius: 999px; border: none; background: none; color: #fdf6e3; box-shadow: none;
+  border-radius: 999px; border: none; background: none; color: var(--ink); box-shadow: none;
 }
 .theme-opt.active { background: var(--mustard); color: var(--ink); }
 .theme-opt:active { transform: none; }
 
 .link-btn {
-  background: none; color: #cfe8da; font-family: 'Poppins', sans-serif;
+  background: none; color: var(--rust); font-family: 'Poppins', sans-serif;
   font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px;
   padding: 6px 8px; text-decoration: underline; box-shadow: none;
 }
@@ -91,7 +95,7 @@ h1 {
   box-shadow: 3px 3px 0 var(--ink);
 }
 .turn-banner.my-turn { background: var(--mustard); }
-.waiting { margin-top: 8px; color: #ffe082; font-size: 0.85rem; font-family: 'Poppins', sans-serif; font-weight: 500; }
+.waiting { margin-top: 8px; color: var(--mustard); font-size: 0.85rem; font-family: 'Poppins', sans-serif; font-weight: 600; }
 
 /* --- Scoreboard: compact running-total strip --- */
 .scoreboard {
@@ -123,9 +127,9 @@ h1 {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .die.placeholder {
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
   box-shadow: none;
-  border: 2px dashed rgba(255, 255, 255, 0.35);
+  border: 2px dashed var(--ink);
 }
 .die.clickable { cursor: pointer; }
 .die.clickable:active { transform: scale(0.95); }
@@ -233,7 +237,7 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 
 .center { text-align: center; margin-top: 20px; }
 .center h2 {
-  font-family: 'Alfa Slab One', cursive; font-weight: 400; color: #fdf6e3; text-shadow: 2px 2px 0 var(--mustard);
+  font-family: 'Alfa Slab One', cursive; font-weight: 400; color: var(--ink); text-shadow: 2px 2px 0 var(--mustard);
 }
 .toast {
   position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
