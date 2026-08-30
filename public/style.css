@@ -98,7 +98,7 @@ h1 {
 }
 .sb-stat { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
 .sb-label { font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 0.55rem; color: var(--ink-soft); }
-.sb-val { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--teal); }
+.sb-val { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--avocado); }
 
 /* --- Dice: flat retro cubes on the felt --- */
 .dice-row {
@@ -203,12 +203,13 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 .score-row .value.empty { color: var(--ink-soft); font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 0.9rem; }
 .score-row.subtotal { font-size: 0.78rem; color: var(--ink-soft); }
 .score-row.subtotal .label { color: var(--ink-soft); font-weight: 500; }
+.score-row.subtotal .value { color: var(--ink-soft); font-weight: 600; }
 .score-row.total {
   font-weight: 700; margin-top: 6px; padding-top: 10px; border-bottom: none;
   border-top: 3px solid var(--ink);
 }
 .score-row.total .label { font-size: 0.9rem; color: var(--ink); font-weight: 700; }
-.score-row.total .value { font-size: 1.4rem; }
+.score-row.total .value { font-size: 1.4rem; color: var(--avocado); }
 
 .score-btn {
   font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.85rem;
