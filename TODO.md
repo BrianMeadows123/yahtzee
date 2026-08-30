@@ -28,3 +28,14 @@
 - [x] Chart colors validated for colorblind-safe separation (dataviz skill's `validate_palette.js`) rather than reused verbatim from the UI's muted teal/rust — those read too gray as chart marks
 - [x] Linked from the main game header (📊 icon)
 - [x] Win/lose animation on the finished screen (sketched up first): confetti + bouncing "Winner" stamp for whoever's own seat won, a quiet muted "Good Game"/"Tie Game" stamp for the other viewer — plays once on the actual finish transition, not on every re-render
+
+## Done: dev-proposed infra pass
+- [x] Graceful shutdown — SIGTERM/SIGINT now close websocket connections cleanly and close the SQLite handle before exit, instead of just getting killed. Verified under both a manual test and a real systemd restart
+- [x] Server/websocket integration tests (`test/server.test.js`) — spawns a real server on an isolated port/DB and drives it with actual `ws` clients: seat claiming, turn enforcement, stale-seat reclaiming, reinit, and a full game landing in `/api/stats`
+- [x] PWA manifest + icons + service worker — home-screen install now launches full-screen with a real app icon (a die-face design, rendered deterministically via headless Chromium) instead of a bookmark glyph. Service worker has no offline caching (nothing useful works offline for a live multiplayer game) but is wired up for push notifications
+
+## In progress: push notifications ("it's your turn")
+- [ ] Server: generate/store VAPID keypair, add `web-push` dependency
+- [ ] Server: store push subscriptions (per seat/token), send a notification when the turn passes to the other player
+- [ ] Client: permission prompt/toggle, subscribe via the service worker already in place
+- [ ] Needs verification on a real phone — push can't be fully tested via browser automation
