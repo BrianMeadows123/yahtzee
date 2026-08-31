@@ -122,6 +122,9 @@ function connect() {
       if (prevGame && prevGame.phase !== 'finished' && msg.game.phase === 'finished') {
         animateFinishOnNextRender = true;
       }
+      if (prevGame && JSON.stringify(prevGame.board) !== JSON.stringify(msg.game.board)) {
+        playPlunk();
+      }
       render();
     } else if (msg.type === 'error') {
       flashError(msg.message);
@@ -141,6 +144,14 @@ function flashError(message) {
   el.textContent = message;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2000);
+}
+
+function playSound(src) {
+  const audio = new Audio(src);
+  audio.play().catch(() => {});
+}
+function playPlunk() {
+  playSound('/sounds/checkers-move.mp3');
 }
 
 // --- Move generation (client-side prediction only, for drag UX — the server
@@ -392,11 +403,6 @@ function renderFinished(game) {
   `;
   document.getElementById('new-game-btn')?.addEventListener('click', () => send({ type: 'newGame' }));
   bindHeaderControls();
-}
-
-function playSound(src) {
-  const audio = new Audio(src);
-  audio.play().catch(() => {});
 }
 
 function confettiPiecesHtml(count) {
