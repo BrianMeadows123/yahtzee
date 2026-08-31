@@ -283,17 +283,27 @@ function renderPlacementGrid(container, previewCells, previewValid) {
   }
   container.innerHTML = html;
 }
+// Touch devices report a "hover" capability too readily in some browsers, but
+// binding mouseover/mouseleave listeners at all is what triggers iOS Safari's
+// "first tap only simulates :hover, the real click needs a second tap" quirk
+// — since we then replace the tapped cell's DOM node before that second tap
+// lands, the click never registers. Only wire up hover preview on devices
+// that can genuinely hover (a real mouse), never on touch.
+const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
 function bindPlacementGridEvents(container) {
-  container.onmouseover = (e) => {
-    if (!selectedShip) return;
-    const cell = e.target.closest('.bs-cell');
-    if (!cell) return;
-    const cells = placementCellsFor(Number(cell.dataset.r), Number(cell.dataset.c), selectedShip.len);
-    renderPlacementGrid(container, cells, placementValid(cells));
-  };
-  container.onmouseleave = () => {
-    if (selectedShip) renderPlacementGrid(container);
-  };
+  if (supportsHover) {
+    container.onmouseover = (e) => {
+      if (!selectedShip) return;
+      const cell = e.target.closest('.bs-cell');
+      if (!cell) return;
+      const cells = placementCellsFor(Number(cell.dataset.r), Number(cell.dataset.c), selectedShip.len);
+      renderPlacementGrid(container, cells, placementValid(cells));
+    };
+    container.onmouseleave = () => {
+      if (selectedShip) renderPlacementGrid(container);
+    };
+  }
   container.onclick = (e) => {
     if (!selectedShip) return;
     const cell = e.target.closest('.bs-cell');
