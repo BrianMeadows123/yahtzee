@@ -249,6 +249,7 @@ function renderFinished(game) {
     ? `<div class="stamp-badge win ${enterClass}">Winner</div>`
     : `<div class="stamp-badge quiet ${enterClass}">${game.winner === null ? 'Tie Game' : 'Good Game'}</div>`;
   const confettiHtml = animate && iWon ? confettiPiecesHtml(26) : '';
+  if (animate) playSound(iWon ? '/sounds/game-win.mp3' : '/sounds/game-over.mp3');
 
   app.innerHTML = `
     <header>

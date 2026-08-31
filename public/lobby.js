@@ -38,6 +38,10 @@ function render() {
           <span class="tile-emoji">🔴</span>
           <span class="tile-text"><h2>Connect Four</h2><p>Get four in a row before they do.</p></span>
         </a>
+        <a class="game-tile" href="/battleship.html">
+          <span class="tile-emoji">🚢</span>
+          <span class="tile-text"><h2>Battleship</h2><p>Hunt their fleet before they sink yours.</p></span>
+        </a>
       </div>
     </div>
   `;

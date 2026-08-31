@@ -31,6 +31,7 @@ Covers the scoring rules and the turn/game flow, including the joker rule edge c
 
 - **Yahtzee** — the original. Full rules including the joker rule, dark mode, dice/scoring sound effects, and a win/lose animation.
 - **Connect Four** — the second game. Same real-time two-device play, same design system, no persistence/stats (yet).
+- **Battleship** — the third game. Hidden information instead of luck: each player places their fleet privately, then takes turns firing blind at the other's board. No persistence/stats (yet).
 
 Each game is its own room with its own seats — whoever connects to a game first is "Player 1" there, the second person just joins. Switching what you're playing never loses progress on the other game; you could have both going at once.
 
@@ -56,6 +57,8 @@ I built this with Claude doing most of the actual coding — game logic, the mul
 - "Dice Throw Roll on Board Game Playing Board" (1, 2, 3) — [Zapsplat.com](https://www.zapsplat.com/)
 - "Plastic Board Game Pieces Drop on Carpet" — [Zapsplat.com](https://www.zapsplat.com/music/plastic-board-game-pieces-drop-on-carpet-2/)
 - "Single Piece of Lego Door Drop onto Other Lego" — [Zapsplat.com](https://www.zapsplat.com/music/single-piece-of-lego-door-drop-onto-other-lego-1/)
+- "Small Stone Drop into Water with a Splash" (Battleship miss) — [Zapsplat.com](https://www.zapsplat.com/music/small-stone-drop-into-water-with-a-splash-4/)
+- "Slightly Distant Explosion, Exterior, Medium, with No Debris" (Battleship hit) — [Zapsplat.com](https://www.zapsplat.com/music/slightly-distant-explosion-exterior-medium-with-no-debris-early-echoes-into-clean-tail-with-slight-flange/)
 
 ## Contributors
 

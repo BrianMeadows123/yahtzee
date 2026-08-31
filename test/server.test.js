@@ -283,3 +283,110 @@ test('connectFour: a full game (vertical win) reaches phase finished', async () 
     a.ws.close(); b.ws.close();
   }
 });
+
+// --- Battleship room: the pure win/sink/placement logic is covered in
+// test/games/battleship.logic.test.js — these focus on what only the server
+// can break: routing, turn-order exemptions during placement, and (most
+// importantly) that the hidden-information split actually holds over the wire.
+
+function validBattleshipFleet(rowOffset = 0) {
+  return [
+    [[rowOffset, 0], [rowOffset, 1], [rowOffset, 2], [rowOffset, 3]], // length 4
+    [[rowOffset + 2, 0], [rowOffset + 2, 1], [rowOffset + 2, 2]], // length 3
+    [[rowOffset + 4, 0], [rowOffset + 4, 1], [rowOffset + 4, 2]], // length 3
+    [[rowOffset + 6, 0], [rowOffset + 6, 1]], // length 2
+  ];
+}
+
+test('battleship: both players can place fleets regardless of turn order', async () => {
+  const [a, b] = await seatedPair('battleship');
+  try {
+    // Seat 1 places first even though seat 0 is nominally "currentPlayer" —
+    // placement isn't turn-gated.
+    send(b.ws, { type: 'placeFleet', ships: validBattleshipFleet(0) });
+    let [stateB] = await Promise.all([b.q.next(), a.q.next()]);
+    assert.equal(stateB.game.players[1].ready, true);
+    assert.equal(stateB.game.phase, 'placing'); // a hasn't placed yet
+
+    send(a.ws, { type: 'placeFleet', ships: validBattleshipFleet(0) });
+    [stateB] = await Promise.all([a.q.next(), b.q.next()]);
+    assert.equal(stateB.game.phase, 'playing');
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});
+
+test('battleship: opponent ship positions stay hidden until a ship is fully sunk', async () => {
+  const [a, b] = await seatedPair('battleship');
+  try {
+    // The room persists across tests in this file — clean slate first.
+    send(a.ws, { type: 'reinit' });
+    await Promise.all([a.q.next(), b.q.next()]);
+    send(b.ws, { type: 'claimSeat' });
+    await Promise.all([a.q.next(), b.q.next()]);
+
+    send(a.ws, { type: 'placeFleet', ships: validBattleshipFleet(0) });
+    await Promise.all([a.q.next(), b.q.next()]);
+    send(b.ws, { type: 'placeFleet', ships: validBattleshipFleet(0) });
+    let [stateA] = await Promise.all([a.q.next(), b.q.next()]);
+    assert.equal(stateA.game.phase, 'playing');
+    assert.equal(stateA.game.myShips.length, 4); // A sees their own fleet
+    assert.equal(stateA.game.enemySunkShips.length, 0); // nothing of B's revealed yet
+
+    // A hits one cell of B's 2-length destroyer at (6,0)-(6,1) — not sunk yet.
+    send(a.ws, { type: 'fire', row: 6, col: 0 });
+    [stateA] = await Promise.all([a.q.next(), b.q.next()]);
+    assert.equal(stateA.game.myShots.at(-1).hit, true);
+    assert.equal(stateA.game.enemySunkShips.length, 0); // one cell of the ship still unrevealed
+
+    // B fires back (harmless, just to restore A's turn).
+    send(b.ws, { type: 'fire', row: 7, col: 0 });
+    await Promise.all([b.q.next(), a.q.next()]);
+
+    // A finishes the destroyer off — now it should reveal.
+    send(a.ws, { type: 'fire', row: 6, col: 1 });
+    [stateA] = await Promise.all([a.q.next(), b.q.next()]);
+    assert.equal(stateA.game.enemySunkShips.length, 1);
+    const revealed = new Set(stateA.game.enemySunkShips[0].map(([r, c]) => `${r},${c}`));
+    assert.ok(revealed.has('6,0') && revealed.has('6,1'));
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});
+
+test('battleship: sinking every enemy ship wins the game', async () => {
+  const [a, b] = await seatedPair('battleship');
+  try {
+    send(a.ws, { type: 'reinit' }); // clean room for this test
+    await Promise.all([a.q.next(), b.q.next()]);
+    send(b.ws, { type: 'claimSeat' });
+    await Promise.all([a.q.next(), b.q.next()]);
+
+    send(a.ws, { type: 'placeFleet', ships: validBattleshipFleet(0) });
+    await Promise.all([a.q.next(), b.q.next()]);
+    send(b.ws, { type: 'placeFleet', ships: validBattleshipFleet(0) });
+    let [stateA] = await Promise.all([a.q.next(), b.q.next()]);
+    assert.equal(stateA.game.phase, 'playing');
+
+    // Cells B needs to hit A on (rows 0,2,4,6 — where A's fleet lives), so B's
+    // harmless filler shots use untouched rows 1/3/5/7 instead.
+    const targetCells = validBattleshipFleet(0).flat();
+    const fillerCells = [];
+    for (let c = 0; c < 8; c++) fillerCells.push([7, c]); // row 7: empty on both boards
+    for (let c = 0; c < 8; c++) fillerCells.push([5, c]); // row 5: also empty, extra headroom
+    let fillerIdx = 0;
+    let state;
+    for (const [row, col] of targetCells) {
+      send(a.ws, { type: 'fire', row, col });
+      [state] = await Promise.all([a.q.next(), b.q.next()]);
+      if (state.game.phase === 'finished') break;
+      const [fr, fc] = fillerCells[fillerIdx++];
+      send(b.ws, { type: 'fire', row: fr, col: fc });
+      await Promise.all([b.q.next(), a.q.next()]);
+    }
+    assert.equal(state.game.phase, 'finished');
+    assert.equal(state.game.winner, 0);
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});

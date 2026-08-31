@@ -43,7 +43,10 @@
 - [x] `game/` reorganized into `games/<name>/` to establish the per-game convention for future additions
 - [ ] Note: this moved `/` from Yahtzee straight to the lobby — anyone who already added the old PWA to their home screen will now land on the lobby first instead of jumping straight into Yahtzee (one extra tap). Worth a heads up if that trips you up.
 
-## Up next: Battleship
-- [ ] Third game, discussed as a deliberate change of genre from dice/board games — hidden info + deduction instead of luck
-- [ ] Bigger lift than Connect Four: two separate boards per player, a ship-placement phase before play starts, hit/miss tracking
-- [ ] Should slot into the same games/<name>/ + independent-room pattern established for Connect Four
+## Done: Battleship
+- [x] Third game, a deliberate change of genre from dice/board games — hidden info + deduction instead of luck
+- [x] Genuinely new architecture: per-seat state shaping (`clientState(room, seat)`, `broadcast()` computed per-connection) so each player's fleet stays hidden from the other until a ship is fully sunk — verified with a server-integration test that actually checks the wire payload, not just the pure logic
+- [x] Interactive ship-placement phase (tray of 4 ships, rotate, hover preview, Ready button) sketched up first and approved before building
+- [x] Hit/miss sound effects (real recorded SFX — splash / distant explosion — credited in README), reuses the existing win/lose stamp+confetti animation for the finished screen
+- [x] Slots into the same games/<name>/ + independent-room pattern established for Connect Four
+- [x] Shared win/lose sound effects (a fanfare + a "game over" sting) added to all three games' finished screens, not just Battleship — attribution still needs confirming, see README TODO note

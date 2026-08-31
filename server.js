@@ -9,6 +9,7 @@ import {
   newGame as newYahtzeeGame, roll, toggleHold, scoreCategory, getScoreOptions, summarize,
 } from './games/yahtzee/gameState.js';
 import { newGame as newConnectFourGame, dropPiece } from './games/connectFour/logic.js';
+import { newGame as newBattleshipGame, placeFleet, fire, isSunk } from './games/battleship/logic.js';
 import {
   recordGame, getStats, closeDb, saveSubscription, getSubscription, removeSubscription,
 } from './db.js';
@@ -26,6 +27,7 @@ const DEFAULT_NAMES = ['Player 1', 'Player 2'];
 const ROOM_FACTORIES = {
   yahtzee: () => newYahtzeeGame(DEFAULT_NAMES),
   connectFour: () => newConnectFourGame(DEFAULT_NAMES),
+  battleship: () => newBattleshipGame(DEFAULT_NAMES),
 };
 
 function createRoom(gameType) {
@@ -40,6 +42,7 @@ function createRoom(gameType) {
 const rooms = {
   yahtzee: createRoom('yahtzee'),
   connectFour: createRoom('connectFour'),
+  battleship: createRoom('battleship'),
 };
 
 function seatForToken(room, token) {
@@ -119,18 +122,52 @@ function connectFourClientState(game) {
   };
 }
 
-function clientState(room) {
-  return room.gameType === 'yahtzee' ? yahtzeeClientState(room.game) : connectFourClientState(room.game);
+// Unlike Yahtzee/Connect Four, Battleship's true state can't be shared as one
+// payload — each player's ship positions must stay hidden from the other
+// until sunk. So this shapes a DIFFERENT view per viewing seat: your own
+// fleet is always visible, the opponent's is not (only which of their cells
+// you've hit/missed, plus the full shape of any ship you've fully sunk).
+function battleshipClientState(game, seat) {
+  const me = seat === 0 || seat === 1 ? seat : null;
+  const opponent = me === null ? null : 1 - me;
+
+  const myShips = me !== null && game.players[me].ships
+    ? game.players[me].ships.map((s) => s.cells) : [];
+  const shotsAgainstMe = me !== null ? game.shotsAt[me] : [];
+  const myShots = opponent !== null ? game.shotsAt[opponent] : [];
+  const enemySunkShips = opponent !== null && game.players[opponent].ships
+    ? game.players[opponent].ships
+      .filter((ship) => isSunk(ship, game.shotsAt[opponent]))
+      .map((ship) => ship.cells)
+    : [];
+
+  return {
+    game: {
+      phase: game.phase,
+      currentPlayer: game.currentPlayer,
+      winner: game.winner,
+      players: game.players.map((p) => ({ name: p.name, ready: p.ready })),
+      myShips,
+      shotsAgainstMe,
+      myShots,
+      enemySunkShips,
+    },
+  };
+}
+
+function clientState(room, seat) {
+  if (room.gameType === 'yahtzee') return yahtzeeClientState(room.game);
+  if (room.gameType === 'connectFour') return connectFourClientState(room.game);
+  return battleshipClientState(room.game, seat);
 }
 
 function broadcast(room) {
-  const shared = clientState(room);
   for (const [ws, conn] of room.connections) {
     if (ws.readyState !== ws.OPEN) continue;
     const seat = seatForToken(room, conn.token);
     ws.send(JSON.stringify({
       type: 'state',
-      ...shared,
+      ...clientState(room, seat),
       seatsTaken: room.seats.map((s) => s !== null),
       you: { seat: seat === -1 ? null : seat, spectator: seat === -1 },
     }));
@@ -227,7 +264,8 @@ const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
-  const roomName = url.searchParams.get('room') === 'connectFour' ? 'connectFour' : 'yahtzee';
+  const requestedRoom = url.searchParams.get('room');
+  const roomName = requestedRoom in rooms ? requestedRoom : 'yahtzee';
   const room = rooms[roomName];
   const requestedToken = url.searchParams.get('token');
   const token = requestedToken || crypto.randomUUID();
@@ -264,7 +302,9 @@ wss.on('connection', (ws, req) => {
       sendError(ws, 'You are spectating; no open seats.');
       return;
     }
-    if (mySeat !== room.game.currentPlayer && msg.type !== 'newGame') {
+    // placeFleet happens during Battleship's setup phase, before there's a
+    // "turn" at all — both players place independently, not in turn order.
+    if (mySeat !== room.game.currentPlayer && msg.type !== 'newGame' && msg.type !== 'placeFleet') {
       sendError(ws, "It's not your turn.");
       return;
     }
@@ -294,6 +334,19 @@ wss.on('connection', (ws, req) => {
           if (room.game.phase !== 'finished') notifyTurn(room, 'Connect Four');
         } else if (msg.type === 'newGame') {
           room.game = newConnectFourGame(room.game.players.map((p) => p.name));
+        } else {
+          sendError(ws, `Unknown message type: ${msg.type}`);
+          return;
+        }
+      } else if (room.gameType === 'battleship') {
+        if (msg.type === 'placeFleet') {
+          placeFleet(room.game, mySeat, msg.ships);
+          if (room.game.phase === 'playing') notifyTurn(room, 'Battleship'); // both fleets are in — game just started
+        } else if (msg.type === 'fire') {
+          fire(room.game, mySeat, msg.row, msg.col);
+          if (room.game.phase !== 'finished') notifyTurn(room, 'Battleship');
+        } else if (msg.type === 'newGame') {
+          room.game = newBattleshipGame(room.game.players.map((p) => p.name));
         } else {
           sendError(ws, `Unknown message type: ${msg.type}`);
           return;

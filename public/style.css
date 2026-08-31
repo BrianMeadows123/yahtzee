@@ -383,3 +383,54 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 @media (max-width: 400px) {
   .c4-cell { width: 32px; height: 32px; }
 }
+
+/* --- Battleship --- */
+.bs-placement-layout, .bs-battle-layout {
+  display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; justify-content: center; margin: 10px 0 24px;
+}
+.bs-tray { display: flex; flex-direction: column; gap: 10px; min-width: 190px; }
+.bs-tray-title { font-family: 'Alfa Slab One', cursive; font-weight: 400; font-size: 0.85rem; margin-bottom: 2px; color: var(--ink); }
+.bs-ship-option {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px;
+  background: var(--panel); border: 2px solid var(--ink); cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink); transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.bs-ship-option.selected { background: var(--mustard); }
+.bs-ship-option.placed { opacity: 0.4; cursor: default; box-shadow: none; border-style: dashed; }
+.bs-ship-option:active:not(.placed) { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--ink); }
+.bs-ship-option .swatch-row { display: flex; gap: 2px; }
+.bs-ship-option .seg { width: 12px; height: 12px; background: var(--ink); border-radius: 2px; }
+.bs-ship-option .label { font-size: 0.72rem; font-weight: 600; color: var(--ink); }
+#rotate-btn { background: var(--mustard); color: var(--ink); }
+#ready-btn.armed { background: var(--avocado); }
+
+.bs-board-block { text-align: center; }
+.bs-board-label { font-family: 'Alfa Slab One', cursive; font-weight: 400; font-size: 0.85rem; margin-bottom: 8px; color: var(--ink); }
+.bs-grid-wrap { overflow-x: auto; }
+.bs-grid {
+  display: inline-grid; grid-template-columns: repeat(8, 1fr); gap: 3px;
+  background: var(--ink); padding: 6px; border-radius: 10px;
+  border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+}
+.bs-cell {
+  width: 34px; height: 34px; background: var(--panel); border-radius: 3px;
+  display: grid; place-items: center; transition: background 0.1s ease;
+}
+.bs-cell.ship { background: var(--ink); }
+.bs-cell.preview-ok { background: color-mix(in srgb, var(--mustard) 55%, var(--panel)); }
+.bs-cell.preview-bad { background: color-mix(in srgb, var(--rust) 55%, var(--panel)); }
+.bs-cell.hit { background: var(--rust); }
+.bs-cell.miss::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--teal); }
+.bs-cell.sunk { background: var(--rust); }
+.bs-cell.clickable { cursor: pointer; }
+.bs-cell.clickable:active { opacity: 0.85; }
+@media (max-width: 420px) {
+  .bs-cell { width: 28px; height: 28px; }
+}
+
+.bs-legend { display: flex; gap: 16px; justify-content: center; margin: 16px 0 0; flex-wrap: wrap; }
+.bs-legend .key { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 600; color: var(--ink); }
+.bs-legend .swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--ink); background: var(--panel); }
+.bs-legend .swatch.ship { background: var(--ink); }
+.bs-legend .swatch.hit { background: var(--rust); }
+.bs-legend .swatch.sunk { background: var(--rust); }
