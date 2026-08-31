@@ -57,4 +57,4 @@
 - [x] Fully-visible game state (no hidden info like Battleship), so the server side is much closer to Connect Four's pattern — no per-seat state shaping needed
 - [x] Movement is drag-and-drop via Pointer Events (the same approach built for Battleship's ship placement) rather than click-to-select-then-click-to-move, per earlier feedback that direct manipulation reads clearer than a two-step click flow, especially on touch
 - [x] Slots into the same games/<name>/ + independent-room pattern established for Connect Four and Battleship
-- [x] Move/capture sound — started as a synthesized Web Audio "plunk", then swapped for a real recorded sound bite once the user provided one (trimmed to a single hit from a 6-hit "increasing force" sample pack), matching the other games' real-SFX pattern. Attribution still needs adding to README once we have the source link.
+- [x] Move/capture sound — started as a synthesized Web Audio "plunk", then swapped for a real recorded sound bite once the user provided one (trimmed to a single hit from a 6-hit "increasing force" sample pack), matching the other games' real-SFX pattern. Credited in README.
