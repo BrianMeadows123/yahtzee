@@ -49,4 +49,4 @@
 - [x] Interactive ship-placement phase (tray of 4 ships, rotate, hover preview, Ready button) sketched up first and approved before building
 - [x] Hit/miss sound effects (real recorded SFX — splash / distant explosion — credited in README), reuses the existing win/lose stamp+confetti animation for the finished screen
 - [x] Slots into the same games/<name>/ + independent-room pattern established for Connect Four
-- [x] Shared win/lose sound effects (a fanfare + a "game over" sting) added to all three games' finished screens, not just Battleship — attribution still needs confirming, see README TODO note
+- [x] Shared win/lose sound effects (a fanfare + a "game over" sting) added to all three games' finished screens, not just Battleship — credited in README

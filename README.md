@@ -59,6 +59,8 @@ I built this with Claude doing most of the actual coding — game logic, the mul
 - "Single Piece of Lego Door Drop onto Other Lego" — [Zapsplat.com](https://www.zapsplat.com/music/single-piece-of-lego-door-drop-onto-other-lego-1/)
 - "Small Stone Drop into Water with a Splash" (Battleship miss) — [Zapsplat.com](https://www.zapsplat.com/music/small-stone-drop-into-water-with-a-splash-4/)
 - "Slightly Distant Explosion, Exterior, Medium, with No Debris" (Battleship hit) — [Zapsplat.com](https://www.zapsplat.com/music/slightly-distant-explosion-exterior-medium-with-no-debris-early-echoes-into-clean-tail-with-slight-flange/)
+- "Game_over.wav" by deleted_user_877451 (game-over sting) — [freesound.org/s/76376](https://freesound.org/s/76376/) — Attribution 3.0
+- "Win.mp3" by David819 (win fanfare) — [freesound.org](https://freesound.org/) — Creative Commons 0
 
 ## Contributors
 
