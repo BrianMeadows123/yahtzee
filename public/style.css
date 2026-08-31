@@ -454,3 +454,66 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 .bs-legend .swatch.ship { background: var(--ink); }
 .bs-legend .swatch.hit { background: var(--rust); }
 .bs-legend .swatch.sunk { background: color-mix(in srgb, var(--rust) 65%, var(--ink)); }
+
+/* --- Checkers --- */
+.ck-board-wrap { display: flex; justify-content: center; margin: 10px 0 20px; overflow-x: auto; }
+.ck-grid {
+  display: inline-grid; grid-template-columns: repeat(8, 1fr);
+  border: 3px solid var(--ink); border-radius: 6px; box-shadow: 5px 5px 0 var(--ink);
+  overflow: hidden;
+}
+.ck-cell {
+  width: 42px; height: 42px; display: grid; place-items: center; position: relative;
+}
+.ck-cell.light { background: var(--panel); }
+.ck-cell.dark { background: var(--ink); }
+.ck-cell.legal-move::after {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+  background: color-mix(in srgb, var(--mustard) 85%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mustard) 35%, transparent);
+}
+.ck-cell.legal-capture::after {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+  background: color-mix(in srgb, var(--rust) 90%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rust) 35%, transparent);
+}
+@media (max-width: 420px) {
+  .ck-cell { width: 34px; height: 34px; }
+}
+
+.ck-piece {
+  width: 78%; height: 78%; border-radius: 50%; cursor: grab; touch-action: none;
+  display: grid; place-items: center;
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.25), inset 0 -3px 4px rgba(0, 0, 0, 0.25);
+}
+.ck-piece.p0 { background: var(--chart-1); }
+.ck-piece.p1 { background: var(--chart-2); }
+.ck-piece:active { cursor: grabbing; }
+.ck-piece.dimmed { opacity: 0.35; cursor: default; }
+.ck-piece.must-capture { animation: ckMustCapture 1.1s ease-in-out infinite; }
+@keyframes ckMustCapture {
+  0%, 100% { box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.25), inset 0 -3px 4px rgba(0, 0, 0, 0.25), 0 0 0 0 color-mix(in srgb, var(--rust) 70%, transparent); }
+  50% { box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.25), inset 0 -3px 4px rgba(0, 0, 0, 0.25), 0 0 0 5px color-mix(in srgb, var(--rust) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ck-piece.must-capture { animation: none; }
+}
+.ck-crown { font-size: 1rem; filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.4)); }
+
+.ck-drag-ghost {
+  position: fixed; top: 0; left: 0; z-index: 1000; pointer-events: none;
+  border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid rgba(0, 0, 0, 0.35); opacity: 0.9;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.25), inset 0 -3px 4px rgba(0, 0, 0, 0.25);
+}
+.ck-drag-ghost.p0 { background: var(--chart-1); }
+.ck-drag-ghost.p1 { background: var(--chart-2); }
+
+.ck-legend { display: flex; gap: 16px; justify-content: center; margin: 16px 0 0; flex-wrap: wrap; }
+.ck-legend .key { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 600; color: var(--ink); }
+.ck-legend .swatch { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); background: var(--panel); }
+.ck-legend .swatch.p0 { background: var(--chart-1); }
+.ck-legend .swatch.p1 { background: var(--chart-2); }
+.ck-legend .swatch.move { background: color-mix(in srgb, var(--mustard) 85%, transparent); }
+.ck-legend .swatch.capture { background: color-mix(in srgb, var(--rust) 90%, transparent); }

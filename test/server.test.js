@@ -390,3 +390,77 @@ test('battleship: sinking every enemy ship wins the game', async () => {
     a.ws.close(); b.ws.close();
   }
 });
+
+// --- Checkers room: unlike Battleship, this game's state is fully shared (no
+// hidden information), so the wire-level risk is really just "does the
+// generic turn-check middleware correctly let a mid-multi-jump-chain player
+// keep moving without the turn having actually passed yet?" — the mandatory
+// capture / chain / kinging RULES themselves are exhaustively covered in
+// test/games/checkers.logic.test.js against hand-built board positions;
+// there's no way to inject an arbitrary board over the wire, only real moves
+// from the standard starting position.
+
+test('checkers: a simple move alternates the turn', async () => {
+  const [a, b] = await seatedPair('checkers');
+  try {
+    send(a.ws, { type: 'reinit' }); // guarantee a clean starting position
+    await Promise.all([a.q.next(), b.q.next()]);
+    send(b.ws, { type: 'claimSeat' });
+    await Promise.all([a.q.next(), b.q.next()]);
+
+    send(a.ws, { type: 'move', fromR: 2, fromC: 1, toR: 3, toC: 0 });
+    const [state] = await Promise.all([a.q.next(), b.q.next()]);
+    assert.equal(state.game.board[2][1], null);
+    assert.equal(state.game.board[3][0].player, 0);
+    assert.equal(state.game.currentPlayer, 1);
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});
+
+test('checkers: acting out of turn is rejected', async () => {
+  const [a, b] = await seatedPair('checkers');
+  try {
+    send(a.ws, { type: 'reinit' });
+    await Promise.all([a.q.next(), b.q.next()]);
+    send(b.ws, { type: 'claimSeat' });
+    await Promise.all([a.q.next(), b.q.next()]);
+
+    send(b.ws, { type: 'move', fromR: 5, fromC: 0, toR: 4, toC: 1 }); // seat 1, but seat 0 goes first
+    const msg = await b.q.next();
+    assert.equal(msg.type, 'error');
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});
+
+test('checkers: a mandatory capture is enforced and correctly passes the turn', async () => {
+  const [a, b] = await seatedPair('checkers');
+  try {
+    send(a.ws, { type: 'reinit' });
+    await Promise.all([a.q.next(), b.q.next()]);
+    send(b.ws, { type: 'claimSeat' });
+    await Promise.all([a.q.next(), b.q.next()]);
+
+    // Walk two pieces into a face-off: A's (2,3)->(3,2), then B's (5,4)->(4,3)
+    // leaves (5,4) empty — so A's piece at (3,2) can now jump over B's piece
+    // at (4,3) and land on the now-vacant (5,4).
+    send(a.ws, { type: 'move', fromR: 2, fromC: 3, toR: 3, toC: 2 });
+    await Promise.all([a.q.next(), b.q.next()]);
+    send(b.ws, { type: 'move', fromR: 5, fromC: 4, toR: 4, toC: 3 });
+    await Promise.all([b.q.next(), a.q.next()]);
+
+    // A non-capturing move must be rejected now that a capture is mandatory.
+    send(a.ws, { type: 'move', fromR: 2, fromC: 1, toR: 3, toC: 0 });
+    const rejected = await a.q.next();
+    assert.equal(rejected.type, 'error');
+
+    send(a.ws, { type: 'move', fromR: 3, fromC: 2, toR: 5, toC: 4 });
+    const [state] = await Promise.all([a.q.next(), b.q.next()]);
+    assert.equal(state.game.board[4][3], null); // captured piece removed
+    assert.equal(state.game.board[5][4].player, 0);
+    assert.equal(state.game.currentPlayer, 1); // single capture, no further chain — turn passes
+  } finally {
+    a.ws.close(); b.ws.close();
+  }
+});

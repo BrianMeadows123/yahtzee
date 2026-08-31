@@ -32,6 +32,7 @@ Covers the scoring rules and the turn/game flow, including the joker rule edge c
 - **Yahtzee** — the original. Full rules including the joker rule, dark mode, dice/scoring sound effects, and a win/lose animation.
 - **Connect Four** — the second game. Same real-time two-device play, same design system, no persistence/stats (yet).
 - **Battleship** — the third game. Hidden information instead of luck: each player places their fleet privately, then takes turns firing blind at the other's board. No persistence/stats (yet).
+- **Checkers** — the fourth game. Standard American rules: mandatory captures, multi-jump chains, kinging. No persistence/stats (yet).
 
 Each game is its own room with its own seats — whoever connects to a game first is "Player 1" there, the second person just joins. Switching what you're playing never loses progress on the other game; you could have both going at once.
 

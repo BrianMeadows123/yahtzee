@@ -10,6 +10,7 @@ import {
 } from './games/yahtzee/gameState.js';
 import { newGame as newConnectFourGame, dropPiece } from './games/connectFour/logic.js';
 import { newGame as newBattleshipGame, placeFleet, fire, isSunk } from './games/battleship/logic.js';
+import { newGame as newCheckersGame, move as moveCheckersPiece } from './games/checkers/logic.js';
 import {
   recordGame, getStats, closeDb, saveSubscription, getSubscription, removeSubscription,
 } from './db.js';
@@ -28,6 +29,7 @@ const ROOM_FACTORIES = {
   yahtzee: () => newYahtzeeGame(DEFAULT_NAMES),
   connectFour: () => newConnectFourGame(DEFAULT_NAMES),
   battleship: () => newBattleshipGame(DEFAULT_NAMES),
+  checkers: () => newCheckersGame(DEFAULT_NAMES),
 };
 
 function createRoom(gameType) {
@@ -43,6 +45,7 @@ const rooms = {
   yahtzee: createRoom('yahtzee'),
   connectFour: createRoom('connectFour'),
   battleship: createRoom('battleship'),
+  checkers: createRoom('checkers'),
 };
 
 function seatForToken(room, token) {
@@ -155,9 +158,23 @@ function battleshipClientState(game, seat) {
   };
 }
 
+function checkersClientState(game) {
+  return {
+    game: {
+      players: game.players.map((p) => ({ name: p.name })),
+      board: game.board,
+      currentPlayer: game.currentPlayer,
+      mustContinueFrom: game.mustContinueFrom,
+      phase: game.phase,
+      winner: game.winner,
+    },
+  };
+}
+
 function clientState(room, seat) {
   if (room.gameType === 'yahtzee') return yahtzeeClientState(room.game);
   if (room.gameType === 'connectFour') return connectFourClientState(room.game);
+  if (room.gameType === 'checkers') return checkersClientState(room.game);
   return battleshipClientState(room.game, seat);
 }
 
@@ -347,6 +364,18 @@ wss.on('connection', (ws, req) => {
           if (room.game.phase !== 'finished') notifyTurn(room, 'Battleship');
         } else if (msg.type === 'newGame') {
           room.game = newBattleshipGame(room.game.players.map((p) => p.name));
+        } else {
+          sendError(ws, `Unknown message type: ${msg.type}`);
+          return;
+        }
+      } else if (room.gameType === 'checkers') {
+        if (msg.type === 'move') {
+          const result = moveCheckersPiece(room.game, mySeat, msg.fromR, msg.fromC, msg.toR, msg.toC);
+          // Mid multi-jump-chain, the turn hasn't actually passed yet — don't
+          // push a "your turn" notification to the person still mid-move.
+          if (room.game.phase !== 'finished' && !result.chainContinues) notifyTurn(room, 'Checkers');
+        } else if (msg.type === 'newGame') {
+          room.game = newCheckersGame(room.game.players.map((p) => p.name));
         } else {
           sendError(ws, `Unknown message type: ${msg.type}`);
           return;

@@ -50,3 +50,11 @@
 - [x] Hit/miss sound effects (real recorded SFX — splash / distant explosion — credited in README), reuses the existing win/lose stamp+confetti animation for the finished screen
 - [x] Slots into the same games/<name>/ + independent-room pattern established for Connect Four
 - [x] Shared win/lose sound effects (a fanfare + a "game over" sting) added to all three games' finished screens, not just Battleship — credited in README
+
+## Done: Checkers
+- [x] Fourth game — a design-sketch artifact (checkered board, chart-1/chart-2 pieces, live mandatory-capture dimming/pulse, king crown) was drafted and approved before building
+- [x] Standard American rules, the part most quick clones get wrong: captures are mandatory, a multi-jump chain must continue with the same piece before the turn passes, and a piece that kings mid-capture stops immediately rather than continuing the chain
+- [x] Fully-visible game state (no hidden info like Battleship), so the server side is much closer to Connect Four's pattern — no per-seat state shaping needed
+- [x] Movement is drag-and-drop via Pointer Events (the same approach built for Battleship's ship placement) rather than click-to-select-then-click-to-move, per earlier feedback that direct manipulation reads clearer than a two-step click flow, especially on touch
+- [x] Slots into the same games/<name>/ + independent-room pattern established for Connect Four and Battleship
+- [ ] No sound effects yet (piece move / capture) — add if/when sound files are provided, following the same pattern as the other games

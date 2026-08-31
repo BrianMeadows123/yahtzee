@@ -42,6 +42,10 @@ function render() {
           <span class="tile-emoji">🚢</span>
           <span class="tile-text"><h2>Battleship</h2><p>Hunt their fleet before they sink yours.</p></span>
         </a>
+        <a class="game-tile" href="/checkers.html">
+          <span class="tile-emoji">⚫</span>
+          <span class="tile-text"><h2>Checkers</h2><p>Jump their pieces, king your way home.</p></span>
+        </a>
       </div>
     </div>
   `;
