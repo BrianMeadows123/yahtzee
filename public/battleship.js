@@ -20,14 +20,14 @@ let animateFinishOnNextRender = false;
 
 // --- Local, pre-submission placement scratch state (see resetLocalPlacementState) ---
 let placementShips;
-let selectedShip = null;
 let horizontal = true;
 let occupied = new Set();
+let dragState = null; // in-flight drag, see beginDrag/onDragMove/onDragEnd
 resetLocalPlacementState();
 
 function resetLocalPlacementState() {
-  placementShips = FLEET_META.map((meta, idx) => ({ ...meta, idx, placed: false, cells: [] }));
-  selectedShip = null;
+  cancelActiveDrag();
+  placementShips = FLEET_META.map((meta, idx) => ({ ...meta, idx, placed: false, cells: [], orientation: null }));
   horizontal = true;
   occupied = new Set();
 }
@@ -257,15 +257,25 @@ function bindHeaderControls() {
   document.getElementById('join-btn')?.addEventListener('click', () => send({ type: 'claimSeat' }));
 }
 
-// --- Placement phase ---------------------------------------------------------
+// --- Placement phase: drag-and-drop ------------------------------------------
+//
+// Ships are placed by dragging: from the tray onto the board, or picked back
+// up off the board to reposition. Pointer Events (not mouse/touch separately)
+// so the exact same code path drives mouse, touch, and pen — this also
+// sidesteps iOS Safari's "first tap only simulates :hover" quirk entirely,
+// since there's no hover/mouseover listener involved anywhere in this flow.
 
-function placementCellsFor(r, c, len) {
+function cellsForOrientation(r, c, len, isHorizontal) {
   const cells = [];
-  for (let i = 0; i < len; i++) cells.push(horizontal ? [r, c + i] : [r + i, c]);
+  for (let i = 0; i < len; i++) cells.push(isHorizontal ? [r, c + i] : [r + i, c]);
   return cells;
 }
 function placementValid(cells) {
   return cells.every(([r, c]) => r >= 0 && r < SIZE && c >= 0 && c < SIZE && !occupied.has(`${r},${c}`));
+}
+function cellFromPoint(x, y) {
+  const cell = document.elementFromPoint(x, y)?.closest('.bs-cell');
+  return cell ? { r: Number(cell.dataset.r), c: Number(cell.dataset.c) } : null;
 }
 
 function renderPlacementGrid(container, previewCells, previewValid) {
@@ -273,7 +283,7 @@ function renderPlacementGrid(container, previewCells, previewValid) {
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       const key = `${r},${c}`;
-      let cls = 'bs-cell clickable';
+      let cls = 'bs-cell';
       if (occupied.has(key)) cls += ' ship';
       if (previewCells?.some(([pr, pc]) => pr === r && pc === c)) {
         cls += previewValid ? ' preview-ok' : ' preview-bad';
@@ -283,46 +293,107 @@ function renderPlacementGrid(container, previewCells, previewValid) {
   }
   container.innerHTML = html;
 }
-// Touch devices report a "hover" capability too readily in some browsers, but
-// binding mouseover/mouseleave listeners at all is what triggers iOS Safari's
-// "first tap only simulates :hover, the real click needs a second tap" quirk
-// — since we then replace the tapped cell's DOM node before that second tap
-// lands, the click never registers. Only wire up hover preview on devices
-// that can genuinely hover (a real mouse), never on touch.
-const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-function bindPlacementGridEvents(container) {
-  if (supportsHover) {
-    container.onmouseover = (e) => {
-      if (!selectedShip) return;
-      const cell = e.target.closest('.bs-cell');
-      if (!cell) return;
-      const cells = placementCellsFor(Number(cell.dataset.r), Number(cell.dataset.c), selectedShip.len);
-      renderPlacementGrid(container, cells, placementValid(cells));
-    };
-    container.onmouseleave = () => {
-      if (selectedShip) renderPlacementGrid(container);
-    };
+function beginDrag(ship, e, { grabIndex = 0 } = {}) {
+  e.preventDefault();
+  const grid = document.getElementById('placement-grid');
+  if (!grid) return;
+  const sampleCell = grid.querySelector('.bs-cell');
+  const size = sampleCell ? sampleCell.getBoundingClientRect().width : 34;
+  const gap = parseFloat(getComputedStyle(grid).columnGap || getComputedStyle(grid).gap || '3') || 3;
+
+  const wasPlaced = ship.placed;
+  const originalCells = ship.cells.slice();
+  const orientation = ship.orientation ?? horizontal;
+  if (wasPlaced) ship.cells.forEach(([r, c]) => occupied.delete(`${r},${c}`));
+  ship.placed = false;
+
+  const ghostEl = document.createElement('div');
+  ghostEl.className = 'bs-drag-ghost';
+  ghostEl.style.flexDirection = orientation ? 'row' : 'column';
+  ghostEl.style.gap = `${gap}px`;
+  for (let i = 0; i < ship.len; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.style.width = `${size}px`;
+    seg.style.height = `${size}px`;
+    ghostEl.appendChild(seg);
   }
-  container.onclick = (e) => {
-    if (!selectedShip) return;
-    const cell = e.target.closest('.bs-cell');
-    if (!cell) return;
-    const cells = placementCellsFor(Number(cell.dataset.r), Number(cell.dataset.c), selectedShip.len);
-    if (!placementValid(cells)) return;
-    cells.forEach(([cr, cc]) => occupied.add(`${cr},${cc}`));
-    selectedShip.placed = true;
-    selectedShip.cells = cells;
-    selectedShip = null;
-    render();
+  document.body.appendChild(ghostEl);
+
+  dragState = {
+    ship, pointerId: e.pointerId, orientation, grabIndex, wasPlaced, originalCells,
+    metrics: { size, step: size + gap }, ghostEl, previewCells: null,
   };
+  updateGhostPosition(e.clientX, e.clientY);
+  render();
+
+  document.addEventListener('pointermove', onDragMove);
+  document.addEventListener('pointerup', onDragEnd);
+  document.addEventListener('pointercancel', onDragEnd);
+}
+
+function updateGhostPosition(x, y) {
+  const { size, step } = dragState.metrics;
+  const offsetAlong = dragState.grabIndex * step + size / 2;
+  const offsetX = dragState.orientation ? offsetAlong : size / 2;
+  const offsetY = dragState.orientation ? size / 2 : offsetAlong;
+  dragState.ghostEl.style.left = `${x - offsetX}px`;
+  dragState.ghostEl.style.top = `${y - offsetY}px`;
+}
+
+function onDragMove(e) {
+  if (!dragState || e.pointerId !== dragState.pointerId) return;
+  updateGhostPosition(e.clientX, e.clientY);
+  const grid = document.getElementById('placement-grid');
+  const hovered = cellFromPoint(e.clientX, e.clientY);
+  if (!hovered) {
+    dragState.previewCells = null;
+    if (grid) renderPlacementGrid(grid);
+    return;
+  }
+  const { orientation, grabIndex, ship } = dragState;
+  const anchorR = orientation ? hovered.r : hovered.r - grabIndex;
+  const anchorC = orientation ? hovered.c - grabIndex : hovered.c;
+  const cells = cellsForOrientation(anchorR, anchorC, ship.len, orientation);
+  dragState.previewCells = cells;
+  if (grid) renderPlacementGrid(grid, cells, placementValid(cells));
+}
+
+function onDragEnd(e) {
+  if (!dragState || e.pointerId !== dragState.pointerId) return;
+  const { ship, orientation, wasPlaced, originalCells, previewCells } = dragState;
+  cancelActiveDrag();
+
+  if (previewCells && placementValid(previewCells)) {
+    previewCells.forEach(([r, c]) => occupied.add(`${r},${c}`));
+    ship.placed = true;
+    ship.cells = previewCells;
+    ship.orientation = orientation;
+  } else if (wasPlaced) {
+    // Dropped somewhere invalid — snap back to where it was.
+    originalCells.forEach(([r, c]) => occupied.add(`${r},${c}`));
+    ship.placed = true;
+    ship.cells = originalCells;
+    ship.orientation = orientation;
+  }
+  render();
+}
+
+function cancelActiveDrag() {
+  if (!dragState) return;
+  dragState.ghostEl.remove();
+  document.removeEventListener('pointermove', onDragMove);
+  document.removeEventListener('pointerup', onDragEnd);
+  document.removeEventListener('pointercancel', onDragEnd);
+  dragState = null;
 }
 
 function placementTrayHtml() {
   const rows = placementShips.map((ship) => {
     const segs = Array.from({ length: ship.len }).map(() => '<div class="seg"></div>').join('');
     return `
-      <div class="bs-ship-option ${selectedShip === ship ? 'selected' : ''} ${ship.placed ? 'placed' : ''}" data-idx="${ship.idx}">
+      <div class="bs-ship-option ${ship.placed ? 'placed' : ''}" data-idx="${ship.idx}">
         <div class="swatch-row">${segs}</div>
         <span class="label">${ship.name} (${ship.len})</span>
       </div>`;
@@ -330,7 +401,7 @@ function placementTrayHtml() {
   const allPlaced = placementShips.every((s) => s.placed);
   return `
     <div class="bs-tray">
-      <div class="bs-tray-title">Your fleet</div>
+      <div class="bs-tray-title">Drag your fleet onto the board</div>
       ${rows}
       <button id="rotate-btn" type="button">&#8635; Rotate: ${horizontal ? 'horizontal' : 'vertical'}</button>
       <button id="ready-btn" type="button" class="${allPlaced ? 'armed' : ''}" ${allPlaced ? '' : 'disabled'}>Ready!</button>
@@ -339,11 +410,10 @@ function placementTrayHtml() {
 }
 function bindPlacementControls() {
   document.querySelectorAll('.bs-ship-option').forEach((el) => {
-    el.addEventListener('click', () => {
+    el.addEventListener('pointerdown', (e) => {
       const ship = placementShips[Number(el.dataset.idx)];
       if (ship.placed) return;
-      selectedShip = selectedShip === ship ? null : ship;
-      render();
+      beginDrag(ship, e, { grabIndex: 0 });
     });
   });
   document.getElementById('rotate-btn')?.addEventListener('click', () => {
@@ -357,7 +427,16 @@ function bindPlacementControls() {
   const grid = document.getElementById('placement-grid');
   if (grid) {
     renderPlacementGrid(grid);
-    bindPlacementGridEvents(grid);
+    grid.addEventListener('pointerdown', (e) => {
+      const cell = e.target.closest('.bs-cell');
+      if (!cell) return;
+      const r = Number(cell.dataset.r);
+      const c = Number(cell.dataset.c);
+      const ship = placementShips.find((s) => s.placed && s.cells.some(([sr, sc]) => sr === r && sc === c));
+      if (!ship) return;
+      const grabIndex = ship.cells.findIndex(([sr, sc]) => sr === r && sc === c);
+      beginDrag(ship, e, { grabIndex });
+    });
   }
 }
 
