@@ -168,9 +168,14 @@ function connect() {
       if (prevGame && msg.game.myShots.length > prevGame.myShots.length) {
         playFireSound(msg.game.myShots.at(-1).hit);
       }
-      if (prevGame && msg.game.enemySunkShips.length > prevGame.enemySunkShips.length) {
-        msg.game.enemySunkShips.slice(prevGame.enemySunkShips.length).flat()
-          .forEach(([r, c]) => justSunkCells.add(`enemy:${r},${c}`));
+      if (prevGame) {
+        // Diff by cell membership, not array length/order: the server rebuilds
+        // this list in fleet-placement order each time, not sink order, so a
+        // newly-sunk ship doesn't reliably land at the end of the array.
+        const prevEnemySunk = new Set(prevGame.enemySunkShips.flat().map(([r, c]) => `${r},${c}`));
+        msg.game.enemySunkShips.flat().forEach(([r, c]) => {
+          if (!prevEnemySunk.has(`${r},${c}`)) justSunkCells.add(`enemy:${r},${c}`);
+        });
       }
       if (prevGame) {
         const prevOwnSunk = new Set(sunkShipCells(prevGame.myShips, prevGame.shotsAgainstMe).map(([r, c]) => `${r},${c}`));
