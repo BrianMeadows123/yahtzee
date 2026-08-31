@@ -420,12 +420,26 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 .bs-cell.preview-bad { background: color-mix(in srgb, var(--rust) 55%, var(--panel)); }
 .bs-cell.hit { background: var(--rust); }
 .bs-cell.miss::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--teal); }
-.bs-cell.sunk { background: var(--rust); }
+.bs-cell.sunk {
+  background: color-mix(in srgb, var(--rust) 65%, var(--ink));
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.bs-cell.sunk::after { content: '☠'; font-size: 1rem; line-height: 1; color: var(--panel); }
+.bs-cell.sunk.flash { animation: bsSunkFlash 0.6s ease; }
+@keyframes bsSunkFlash {
+  0% { transform: scale(1.35); box-shadow: 0 0 0 4px var(--mustard); }
+  55% { transform: scale(0.92); }
+  100% { transform: scale(1); box-shadow: inset 0 0 0 2px var(--ink); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bs-cell.sunk.flash { animation: none; }
+}
 .bs-cell.clickable { cursor: pointer; }
 .bs-cell.clickable:active { opacity: 0.85; }
 #placement-grid .bs-cell.ship { cursor: grab; touch-action: none; }
 @media (max-width: 420px) {
   .bs-cell { width: 28px; height: 28px; }
+  .bs-cell.sunk::after { font-size: 0.82rem; }
 }
 
 .bs-drag-ghost {
@@ -439,4 +453,4 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 .bs-legend .swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--ink); background: var(--panel); }
 .bs-legend .swatch.ship { background: var(--ink); }
 .bs-legend .swatch.hit { background: var(--rust); }
-.bs-legend .swatch.sunk { background: var(--rust); }
+.bs-legend .swatch.sunk { background: color-mix(in srgb, var(--rust) 65%, var(--ink)); }

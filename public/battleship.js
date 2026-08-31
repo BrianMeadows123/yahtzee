@@ -17,6 +17,12 @@ let mySeat = null;
 let isSpectator = true;
 let latest = null;
 let animateFinishOnNextRender = false;
+let justSunkCells = new Set(); // 'own:r,c' | 'enemy:r,c' — one-shot flash, cleared at the end of render()
+
+function sunkShipCells(shipsCells, shots) {
+  const hitKeys = new Set(shots.filter((s) => s.hit).map((s) => `${s.row},${s.col}`));
+  return shipsCells.filter((cells) => cells.every(([r, c]) => hitKeys.has(`${r},${c}`))).flat();
+}
 
 // --- Local, pre-submission placement scratch state (see resetLocalPlacementState) ---
 let placementShips;
@@ -162,6 +168,16 @@ function connect() {
       if (prevGame && msg.game.myShots.length > prevGame.myShots.length) {
         playFireSound(msg.game.myShots.at(-1).hit);
       }
+      if (prevGame && msg.game.enemySunkShips.length > prevGame.enemySunkShips.length) {
+        msg.game.enemySunkShips.slice(prevGame.enemySunkShips.length).flat()
+          .forEach(([r, c]) => justSunkCells.add(`enemy:${r},${c}`));
+      }
+      if (prevGame) {
+        const prevOwnSunk = new Set(sunkShipCells(prevGame.myShips, prevGame.shotsAgainstMe).map(([r, c]) => `${r},${c}`));
+        sunkShipCells(msg.game.myShips, msg.game.shotsAgainstMe).forEach(([r, c]) => {
+          if (!prevOwnSunk.has(`${r},${c}`)) justSunkCells.add(`own:${r},${c}`);
+        });
+      }
       render();
     } else if (msg.type === 'error') {
       flashError(msg.message);
@@ -189,12 +205,16 @@ function ownBoardCellsHtml(game) {
   const shipCells = new Set(game.myShips.flat().map(([r, c]) => `${r},${c}`));
   const hitCells = new Set(game.shotsAgainstMe.filter((s) => s.hit).map((s) => `${s.row},${s.col}`));
   const missCells = new Set(game.shotsAgainstMe.filter((s) => !s.hit).map((s) => `${s.row},${s.col}`));
+  const sunkCells = new Set(sunkShipCells(game.myShips, game.shotsAgainstMe).map(([r, c]) => `${r},${c}`));
   let html = '';
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       const key = `${r},${c}`;
       let cls = 'bs-cell';
-      if (hitCells.has(key)) cls += ' hit';
+      if (sunkCells.has(key)) {
+        cls += ' sunk';
+        if (justSunkCells.has(`own:${key}`)) cls += ' flash';
+      } else if (hitCells.has(key)) cls += ' hit';
       else if (missCells.has(key)) cls += ' miss';
       else if (shipCells.has(key)) cls += ' ship';
       html += `<div class="${cls}"></div>`;
@@ -213,8 +233,10 @@ function enemyBoardCellsHtml(game, clickable) {
       const key = `${r},${c}`;
       const alreadyShot = hitCells.has(key) || missCells.has(key);
       let cls = 'bs-cell';
-      if (sunkCells.has(key)) cls += ' sunk';
-      else if (hitCells.has(key)) cls += ' hit';
+      if (sunkCells.has(key)) {
+        cls += ' sunk';
+        if (justSunkCells.has(`enemy:${key}`)) cls += ' flash';
+      } else if (hitCells.has(key)) cls += ' hit';
       else if (missCells.has(key)) cls += ' miss';
       if (clickable && !alreadyShot) cls += ' clickable';
       html += `<div class="${cls}" data-r="${r}" data-c="${c}"></div>`;
@@ -587,4 +609,5 @@ function render() {
   if (game.phase === 'placing') renderPlacement(game, seatsTaken);
   else if (game.phase === 'playing') renderPlaying(game, seatsTaken);
   else renderFinished(game);
+  justSunkCells = new Set();
 }
