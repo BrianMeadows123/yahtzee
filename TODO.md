@@ -34,8 +34,8 @@
 - [x] Server/websocket integration tests (`test/server.test.js`) — spawns a real server on an isolated port/DB and drives it with actual `ws` clients: seat claiming, turn enforcement, stale-seat reclaiming, reinit, and a full game landing in `/api/stats`
 - [x] PWA manifest + icons + service worker — home-screen install now launches full-screen with a real app icon (a die-face design, rendered deterministically via headless Chromium) instead of a bookmark glyph. Service worker has no offline caching (nothing useful works offline for a live multiplayer game) but is wired up for push notifications
 
-- [x] Push notifications for "it's your turn" — bell icon in the header subscribes via the service worker; server notifies whoever's turn it becomes on every score event. VAPID keys auto-generated and persisted server-side, dead subscriptions dropped automatically. Verified end-to-end except actual on-device delivery (browser automation can't grant OS notification permission or observe a push arriving)
-  - [ ] **Needs a real-device check**: tap the bell 🔕→🔔 in the header, allow notifications, then have the other player score — confirm a notification actually shows up
+- [x] Push notifications for "it's your turn" — bell icon in the header subscribes via the service worker; server notifies whoever's turn it becomes on every score event. VAPID keys auto-generated and persisted server-side, dead subscriptions dropped automatically.
+- [x] Real-device check confirmed delivery works — notification lands in the tray/notification center. No heads-up banner pop-up though; added `vibrate` + `requireInteraction` to the service worker's `showNotification()` call, but banner-vs-tray-only is ultimately an OS-level per-app/per-site notification importance setting outside what the page can force. Worth checking the device's own notification settings for the site/PWA if the banner matters.
 
 ## Done: multi-game platform
 - [x] Restructured into a small lobby ("/") + independent rooms per game — Yahtzee and Connect Four each have their own seats/state, so switching games never loses progress on the other

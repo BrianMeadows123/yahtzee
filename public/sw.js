@@ -25,6 +25,8 @@ self.addEventListener('push', (event) => {
       badge: '/icons/icon-192.png',
       tag: 'yahtzee-turn',
       renotify: true,
+      requireInteraction: true,
+      vibrate: [200, 100, 200],
     }),
   );
 });
