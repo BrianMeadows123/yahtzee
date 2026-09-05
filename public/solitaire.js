@@ -67,6 +67,7 @@ let dailyLockedResult = null;
 let animateFinishOnNextRender = false;
 let timerHandle = null;
 let dragState = null;
+let history = []; // stack of prior game snapshots for Undo — in-memory only, not persisted (a refresh loses undo history, not the game itself)
 
 function todayDate() {
   const d = new Date();
@@ -150,6 +151,7 @@ function newRound(dailySeed) {
 async function enterMode(m) {
   mode = m;
   localStorage.setItem('solitaire-mode', mode);
+  history = []; // undo history isn't persisted, so it never carries across a mode switch, resume, or new round
   if (mode === 'daily') {
     // Resolving today's guaranteed-solvable seed usually returns in
     // milliseconds (cached after the first request of the day), but the
@@ -186,6 +188,19 @@ function afterGameChange() {
     animateFinishOnNextRender = true;
     submitResult(currentElapsed());
   }
+  render();
+}
+
+// Snapshot before a mutating action, so it can be popped back on Undo — the
+// caller is responsible for discarding the snapshot if the action turns out
+// to be illegal (nothing actually happened, so there's nothing to undo).
+function snapshotForUndo() {
+  history.push(structuredClone(game));
+}
+function undo() {
+  if (!history.length) return;
+  game = history.pop();
+  persist();
   render();
 }
 
@@ -305,11 +320,13 @@ function onDragEnd(e) {
   const target = dropZoneFromPoint(e.clientX, e.clientY);
   dragState = null;
   if (target && dests.some((d) => d.pile === target.pile && (d.pile === 'foundation' ? d.suit === target.suit : d.col === target.col))) {
+    snapshotForUndo();
     try {
       move(game, source, target);
       afterGameChange();
       return;
     } catch (err) {
+      history.pop();
       flashError(err.message);
     }
   }
@@ -423,6 +440,7 @@ function bodyPlaying() {
       <div class="sol-tableau">${game.tableau.map((col, i) => tableauColumnHtml(col, i)).join('')}</div>
     </div>
     <div class="sol-actions">
+      <button id="undo-btn" class="sol-secondary-btn" ${history.length ? '' : 'disabled'}>Undo</button>
       <button id="give-up-btn" class="sol-secondary-btn">Give Up</button>
       ${mode === 'free' ? '<button id="new-round-btn" class="sol-secondary-btn">New Deal</button>' : ''}
     </div>
@@ -494,22 +512,27 @@ function bindBoard() {
   document.querySelectorAll('.sol-card.draggable').forEach((el) => {
     el.addEventListener('pointerdown', (e) => beginDrag(e, resolveClientSource(el)));
     el.addEventListener('dblclick', () => {
+      snapshotForUndo();
       try {
         autoMoveToFoundation(game, resolveClientSource(el));
         afterGameChange();
       } catch (err) {
+        history.pop();
         flashError(err.message);
       }
     });
   });
   document.getElementById('sol-stock')?.addEventListener('click', () => {
+    snapshotForUndo();
     try {
       draw(game);
       afterGameChange();
     } catch (err) {
+      history.pop();
       flashError(err.message);
     }
   });
+  document.getElementById('undo-btn')?.addEventListener('click', undo);
 }
 
 function render() {
