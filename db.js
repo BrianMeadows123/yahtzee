@@ -72,6 +72,16 @@ export function removeSubscription(token) {
   db.prepare('DELETE FROM push_subscriptions WHERE token = ?').run(token);
 }
 
+// Justy likes to play under whatever silly display name she feels like that
+// day (setName is free-text), which otherwise fragments her stats across
+// many distinct "players". Only an exact "Brian" (case-insensitive, trimmed)
+// is kept as its own identity for stats purposes; every other name folds
+// into "Justy". This only affects what gets written to the stats DB — the
+// live in-game display name (setName) is untouched.
+function normalizeStatsName(name) {
+  return name.trim().toLowerCase() === 'brian' ? 'Brian' : 'Justy';
+}
+
 // Records a just-finished game (both scorecards complete) for history/stats.
 // Grouping by player NAME (not seat) elsewhere lets stats follow a person
 // across games even though seats are just "whoever connected first."
@@ -88,7 +98,8 @@ export function recordGame(game, summaries) {
   const { lastInsertRowid: gameId } = insertGame.run(new Date().toISOString(), game.winner);
   game.players.forEach((player, seat) => {
     const summary = summaries[seat];
-    insertPlayer.run(gameId, seat, player.name, summary.total, summary.upperSubtotal, summary.upperBonus, summary.yahtzeeBonus);
+    const statsName = normalizeStatsName(player.name);
+    insertPlayer.run(gameId, seat, statsName, summary.total, summary.upperSubtotal, summary.upperBonus, summary.yahtzeeBonus);
     for (const category of CATEGORIES) {
       insertCategory.run(gameId, seat, category, player.scorecard[category] ?? 0);
     }

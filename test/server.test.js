@@ -199,6 +199,15 @@ test('a finished game is persisted and shows up in /api/stats', async () => {
     await b.q.next(); // b: reseated at 1
     await a.q.next(); // a: sees b rejoin
 
+    // Distinct names so the stats grouping below sees two separate players —
+    // db.js folds any non-"Brian" name to "Justy" for stats purposes (a
+    // production hotfix so her varying display names don't fragment her
+    // stats), so the two names used here must land on opposite sides of that.
+    send(a.ws, { type: 'setName', name: 'Brian' });
+    await a.q.next(); await b.q.next();
+    send(b.ws, { type: 'setName', name: 'Riley' });
+    await a.q.next(); await b.q.next();
+
     const clients = [a, b];
     let current = 0;
     let state;
