@@ -33,8 +33,9 @@ Covers the scoring rules and the turn/game flow, including the joker rule edge c
 - **Connect Four** — the second game. Same real-time two-device play, same design system, no persistence/stats (yet).
 - **Battleship** — the third game. Hidden information instead of luck: each player places their fleet privately, then takes turns firing blind at the other's board. No persistence/stats (yet).
 - **Checkers** — the fourth game. Standard American rules: mandatory captures, multi-jump chains, kinging. No persistence/stats (yet).
+- **Solitaire** — the fifth game, and the odd one out: single-player, so it's not a live room at all. Play Free Play any time (unlimited random deals), or Today's Challenge — a daily seeded deal so you can each play it on your own schedule and compare scores afterward. Has its own stats/leaderboard.
 
-Each game is its own room with its own seats — whoever connects to a game first is "Player 1" there, the second person just joins. Switching what you're playing never loses progress on the other game; you could have both going at once.
+Each two-player game is its own room with its own seats — whoever connects to a game first is "Player 1" there, the second person just joins. Switching what you're playing never loses progress on the other game; you could have both going at once. Solitaire doesn't use rooms/seats at all, since there's no opponent to synchronize with.
 
 ## Stack
 
@@ -44,9 +45,11 @@ Just Node (`node:http`, `node:sqlite`, `ws`, `web-push`), no framework, no build
 
 There's a manifest + icon + service worker, so "Add to Home Screen" launches full-screen like a real app instead of opening inside browser chrome. The bell icon in the header lets you turn on "your turn" push notifications, so you don't have to keep the tab open to know when it's your move.
 
-## Stats (Yahtzee only, for now)
+## Stats (Yahtzee and Solitaire, for now)
 
 Every finished Yahtzee game gets saved to a local SQLite file (`data/yahtzee.db`, gitignored — it's runtime data, not source). There's a `/stats.html` page with a score trend line chart, an average-score-per-category bar chart, win/loss records, and a recent-games table, grouped by player name rather than seat since whoever connects first becomes "Player 1" on a given day.
+
+Solitaire results (both Free Play and Today's Challenge) save to the same database and have their own leaderboard panel right on `/solitaire.html` (🏆 icon) — free-play stats per name, plus a day-by-day table of both people's Today's Challenge results so you can compare how you each did on the identical deal, even if you played hours apart.
 
 ## About the build
 

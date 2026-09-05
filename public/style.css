@@ -517,3 +517,108 @@ button:disabled { background: var(--ink-soft); color: var(--panel); opacity: 0.6
 .ck-legend .swatch.p1 { background: var(--chart-2); }
 .ck-legend .swatch.move { background: color-mix(in srgb, var(--mustard) 85%, transparent); }
 .ck-legend .swatch.capture { background: color-mix(in srgb, var(--rust) 90%, transparent); }
+
+/* --- Solitaire --- */
+.sol-tabs { display: flex; justify-content: center; gap: 8px; margin: 14px 0 6px; }
+.sol-tab {
+  padding: 7px 16px; border-radius: 999px; font-size: 0.8rem;
+  background: var(--panel); color: var(--ink); border: 2.5px solid var(--ink);
+  box-shadow: none; font-weight: 700;
+}
+.sol-tab.active { background: var(--mustard); box-shadow: 3px 3px 0 var(--ink); }
+
+.sol-name-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
+.sol-name-row label { font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
+#sol-name-input {
+  padding: 6px 10px; border-radius: 6px; border: 2px solid var(--ink);
+  background: var(--panel); color: var(--ink); font-family: 'Poppins', sans-serif; font-weight: 500;
+  font-size: 0.85rem; width: 140px;
+}
+
+.sol-status-line {
+  display: flex; justify-content: center; gap: 16px; margin-bottom: 12px;
+  font-size: 0.8rem; font-weight: 700; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.sol-status-line .sol-timer { color: var(--ink); }
+
+.sol-board { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.sol-top-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.sol-pile-pair { display: flex; gap: 10px; }
+.sol-stock-slot, .sol-waste-slot { position: relative; width: 50px; height: 68px; }
+.sol-stock-slot.clickable { cursor: pointer; }
+.sol-stock-slot.clickable:active { opacity: 0.85; }
+.sol-pile-count {
+  position: absolute; bottom: -16px; left: 0; right: 0; text-align: center;
+  font-size: 0.62rem; color: var(--ink-soft); font-weight: 600;
+}
+.sol-foundations { display: flex; gap: 10px; }
+.sol-foundation {
+  position: relative; width: 50px; height: 68px; border-radius: 6px;
+  border: 2px dashed var(--ink-soft); display: grid; place-items: center;
+}
+.sol-foundation-suit { font-size: 1.4rem; color: var(--ink-soft); opacity: 0.5; }
+.sol-foundation-suit.red { color: var(--rust); }
+.sol-foundation-suit.black { color: var(--ink); }
+
+.sol-tableau { display: flex; gap: 8px; overflow-x: auto; max-width: 100%; padding-bottom: 10px; }
+.sol-col { position: relative; width: 50px; flex-shrink: 0; }
+
+.sol-card {
+  position: absolute; left: 0; top: 0; width: 50px; height: 68px; border-radius: 6px;
+  border: 2px solid var(--ink); box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: 'Poppins', sans-serif; background: var(--panel);
+}
+.sol-card.back {
+  background: repeating-linear-gradient(45deg, var(--teal), var(--teal) 5px, color-mix(in srgb, var(--teal) 75%, black) 5px, color-mix(in srgb, var(--teal) 75%, black) 10px);
+}
+.sol-card.empty-slot {
+  background: transparent; border: 2px dashed var(--ink-soft); box-shadow: none;
+  color: var(--ink-soft); font-size: 1.1rem; display: grid; place-items: center;
+}
+.sol-card .sol-rank { font-size: 1rem; font-weight: 800; line-height: 1.1; }
+.sol-card .sol-suit { font-size: 1.05rem; line-height: 1.1; }
+.sol-card.red { color: var(--rust); }
+.sol-card.black { color: var(--ink); }
+.sol-card.draggable { cursor: grab; touch-action: none; }
+.sol-card.draggable:active { cursor: grabbing; }
+
+.sol-dropzone.legal { box-shadow: 0 0 0 3px var(--mustard) inset; border-radius: 6px; }
+.sol-foundation.legal { border-style: solid; border-color: var(--mustard); }
+
+.sol-drag-ghost {
+  position: fixed; top: 0; left: 0; z-index: 1000; pointer-events: none; opacity: 0.92;
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.35));
+}
+
+.sol-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+.sol-secondary-btn {
+  background: var(--panel); color: var(--ink); border: 2px solid var(--ink); box-shadow: none;
+  font-size: 0.8rem; padding: 8px 16px;
+}
+
+.sol-finish-stats {
+  display: flex; gap: 14px; justify-content: center; margin: 14px 0;
+  font-size: 0.85rem; font-weight: 700; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.sol-hint { font-size: 0.78rem; color: var(--ink-soft); max-width: 320px; margin: 8px auto 14px; }
+
+.sol-stats-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 900;
+  display: flex; align-items: flex-start; justify-content: center; padding: 30px 14px; overflow-y: auto;
+}
+.sol-stats-panel {
+  background: var(--panel); border-radius: 12px; border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
+  padding: 18px; max-width: 560px; width: 100%;
+}
+.sol-stats-panel h3 {
+  font-family: 'Alfa Slab One', cursive; font-weight: 400; font-size: 0.9rem; color: var(--ink); margin: 16px 0 8px;
+}
+.sol-stats-panel .header-row h2 { flex: 1; text-align: left; margin: 0; font-size: 1.1rem; }
+
+@media (max-width: 480px) {
+  .sol-stock-slot, .sol-waste-slot, .sol-foundation, .sol-card { width: 42px; height: 58px; }
+  .sol-col { width: 42px; }
+  .sol-card .sol-rank { font-size: 0.85rem; }
+  .sol-card .sol-suit { font-size: 0.9rem; }
+}

@@ -39,6 +39,18 @@ db.exec(`
     subscription TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS solitaire_games (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    seed TEXT NOT NULL,
+    finished_at TEXT NOT NULL,
+    won INTEGER NOT NULL,
+    cards_home INTEGER NOT NULL,
+    moves INTEGER NOT NULL,
+    elapsed_seconds INTEGER NOT NULL,
+    UNIQUE(name, mode, seed)
+  );
 `);
 
 // Push subscriptions are keyed by the seat token (the stable per-device
@@ -124,6 +136,47 @@ export function getStats() {
   `).all();
 
   return { players, categoryAverages, trend, recentGames };
+}
+
+// Solitaire has no seats — one row per finished/given-up game, grouped by
+// name like Yahtzee's stats. UNIQUE(name, mode, seed) is what enforces "one
+// daily attempt per person per day": a free-play game always gets a fresh
+// random seed so it never collides, but resubmitting the same daily seed for
+// the same name is silently ignored (INSERT OR IGNORE) and the caller is
+// told via the returned boolean so it can show "already played today".
+export function recordSolitaireGame({
+  name, mode, seed, won, cardsHome, moves, elapsedSeconds,
+}) {
+  const result = db.prepare(`
+    INSERT OR IGNORE INTO solitaire_games (name, mode, seed, finished_at, won, cards_home, moves, elapsed_seconds)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(name, mode, seed, new Date().toISOString(), won ? 1 : 0, cardsHome, moves, elapsedSeconds);
+  return result.changes > 0;
+}
+
+export function getSolitaireStats() {
+  const freePlay = db.prepare(`
+    SELECT
+      name,
+      COUNT(*) AS gamesPlayed,
+      SUM(won) AS wins,
+      AVG(cards_home) AS avgCardsHome,
+      MIN(CASE WHEN won = 1 THEN elapsed_seconds END) AS bestElapsedSeconds
+    FROM solitaire_games
+    WHERE mode = 'free'
+    GROUP BY name
+    ORDER BY gamesPlayed DESC
+  `).all();
+
+  const daily = db.prepare(`
+    SELECT seed, name, won, cards_home AS cardsHome, moves, elapsed_seconds AS elapsedSeconds, finished_at AS finishedAt
+    FROM solitaire_games
+    WHERE mode = 'daily'
+    ORDER BY seed DESC, name ASC
+    LIMIT 60
+  `).all();
+
+  return { freePlay, daily };
 }
 
 export function closeDb() {

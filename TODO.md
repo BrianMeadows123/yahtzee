@@ -58,3 +58,12 @@
 - [x] Movement is drag-and-drop via Pointer Events (the same approach built for Battleship's ship placement) rather than click-to-select-then-click-to-move, per earlier feedback that direct manipulation reads clearer than a two-step click flow, especially on touch
 - [x] Slots into the same games/<name>/ + independent-room pattern established for Connect Four and Battleship
 - [x] Move/capture sound — started as a synthesized Web Audio "plunk", then swapped for a real recorded sound bite once the user provided one (trimmed to a single hit from a 6-hit "increasing force" sample pack), matching the other games' real-SFX pattern. Credited in README.
+
+## Done: Solitaire
+- [x] Fifth game, and architecturally the odd one out: single-player, so no room/seats/WebSocket — `games/solitaire/logic.js` is served statically and imported as a native ES module directly in the browser, and only touches the server via two REST endpoints to persist a finished game
+- [x] Standard Klondike, draw-1, with the usual descending-alternating-color tableau runs (including multi-card "supermoves") and ascending-by-suit foundations
+- [x] Free Play (unlimited, random deals) and a Wordle-style Today's Challenge (seeded off today's date, so both players get the identical deal) — one daily attempt per person enforced by a DB unique constraint, with a locked "already played today" screen on a repeat visit
+- [x] Score is `cardsHome` (0-52) + moves + elapsed time rather than the old arcane Windows point formula — meaningful for a given-up game too, not just a win
+- [x] Drag-and-drop reuses the Checkers/Battleship ghost-element + `elementFromPoint` Pointer Events pattern
+- [x] Own leaderboard panel (🏆 icon) on the page itself: free-play stats per name, plus a daily-results table comparing both players day by day
+- [ ] No dedicated move/draw sound yet — only the shared win/lose sounds are wired up so far

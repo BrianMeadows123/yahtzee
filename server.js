@@ -13,11 +13,17 @@ import { newGame as newBattleshipGame, placeFleet, fire, isSunk } from './games/
 import { newGame as newCheckersGame, move as moveCheckersPiece } from './games/checkers/logic.js';
 import {
   recordGame, getStats, closeDb, saveSubscription, getSubscription, removeSubscription,
+  recordSolitaireGame, getSolitaireStats,
 } from './db.js';
 import { publicKey as vapidPublicKey, sendPush } from './push.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
+// Solitaire has no live opponent to sync with, so its logic module runs
+// directly in the browser (a plain ES module import) instead of being wired
+// into the WebSocket room protocol — this exposes games/ read-only so that
+// works, same directory-traversal guard as PUBLIC_DIR below.
+const GAMES_DIR = path.join(__dirname, 'games');
 const PORT = process.env.PORT || 3000;
 const DEFAULT_NAMES = ['Player 1', 'Player 2'];
 
@@ -206,8 +212,10 @@ const MIME = {
 function serveStatic(req, res) {
   let reqPath = req.url.split('?')[0];
   if (reqPath === '/') reqPath = '/lobby.html';
-  const filePath = path.join(PUBLIC_DIR, path.normalize(reqPath));
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  const fromGames = reqPath.startsWith('/games/');
+  const baseDir = fromGames ? GAMES_DIR : PUBLIC_DIR;
+  const filePath = path.join(baseDir, path.normalize(fromGames ? reqPath.slice('/games'.length) : reqPath));
+  if (!filePath.startsWith(baseDir)) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
   fs.readFile(filePath, (err, data) => {
@@ -242,6 +250,27 @@ async function handleRequest(req, res) {
 
   if (reqPath === '/api/stats') {
     sendJson(res, 200, getStats());
+    return;
+  }
+
+  if (reqPath === '/api/solitaire/stats') {
+    sendJson(res, 200, getSolitaireStats());
+    return;
+  }
+
+  if (reqPath === '/api/solitaire/result' && req.method === 'POST') {
+    try {
+      const {
+        name, mode, seed, won, cardsHome, moves, elapsedSeconds,
+      } = await readJsonBody(req);
+      if (!name || !mode || !seed) { sendJson(res, 400, { error: 'Missing name, mode, or seed' }); return; }
+      const accepted = recordSolitaireGame({
+        name, mode, seed, won: !!won, cardsHome, moves, elapsedSeconds,
+      });
+      sendJson(res, 200, { ok: true, accepted });
+    } catch {
+      sendJson(res, 400, { error: 'Bad request' });
+    }
     return;
   }
 

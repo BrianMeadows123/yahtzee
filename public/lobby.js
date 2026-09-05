@@ -46,6 +46,10 @@ function render() {
           <span class="tile-emoji">⚫</span>
           <span class="tile-text"><h2>Checkers</h2><p>Jump their pieces, king your way home.</p></span>
         </a>
+        <a class="game-tile" href="/solitaire.html">
+          <span class="tile-emoji">🃏</span>
+          <span class="tile-text"><h2>Solitaire</h2><p>A solo game for whenever you've got a minute — plus a daily deal you both play and compare.</p></span>
+        </a>
       </div>
     </div>
   `;
