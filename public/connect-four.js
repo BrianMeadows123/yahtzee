@@ -128,6 +128,7 @@ function connect() {
       latest = msg;
       mySeat = msg.you.seat;
       isSpectator = msg.you.spectator;
+      syncSavedName(msg.game);
       if (prevGame && prevGame.phase !== 'finished' && msg.game.phase === 'finished') {
         animateFinishOnNextRender = true;
       }
@@ -145,6 +146,15 @@ refreshPushState().then(() => render());
 
 function send(payload) {
   if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+}
+
+// Applies the shared Brian/Justy/Custom choice automatically once seated,
+// so picking a name on one game already shows up on every other one —
+// harmless to repeat (only actually sends when it'd change something).
+function syncSavedName(game) {
+  if (mySeat === null || isSpectator) return;
+  const saved = window.NamePicker.getSaved();
+  if (saved && game.players[mySeat].name !== saved) send({ type: 'setName', name: saved });
 }
 
 function flashError(message) {
@@ -170,10 +180,6 @@ function boardHtml(game, canPlay) {
     cols.push(`<div class="c4-col ${canPlay ? 'clickable' : ''}" data-col="${c}">${cells.join('')}</div>`);
   }
   return `<div class="c4-board">${cols.join('')}</div>`;
-}
-
-function nameEditor(name) {
-  return `<input id="name-input" type="text" value="${escapeHtml(name)}" maxlength="24" placeholder="Your name" />`;
 }
 
 function render() {
@@ -216,7 +222,7 @@ function render() {
     <div class="c4-board-wrap">${boardHtml(game, canPlay)}</div>
 
     <section class="controls">
-      ${mySeat !== null && !isSpectator ? nameEditor(game.players[mySeat].name) : ''}
+      ${mySeat !== null && !isSpectator ? `<div id="name-picker-root">${window.NamePicker.html(game.players[mySeat].name)}</div>` : ''}
     </section>
   `;
 
@@ -226,13 +232,13 @@ function render() {
       send({ type: 'reinit' });
     }
   });
+  window.NamePicker.bind(document.getElementById('name-picker-root'), (newName) => {
+    send({ type: 'setName', name: newName });
+  });
   bindThemeToggle();
   bindPushButton();
   document.querySelectorAll('.c4-col.clickable').forEach((el) => {
     el.addEventListener('click', () => send({ type: 'drop', column: Number(el.dataset.col) }));
-  });
-  document.getElementById('name-input')?.addEventListener('change', (e) => {
-    send({ type: 'setName', name: e.target.value });
   });
 }
 

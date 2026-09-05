@@ -153,6 +153,7 @@ function connect() {
       latest = msg;
       mySeat = msg.you.seat;
       isSpectator = msg.you.spectator;
+      syncSavedName(msg.game);
 
       // A fresh game (reinit or "new game") clears myShips server-side —
       // that's the signal to throw away stale local placement scratch.
@@ -194,6 +195,15 @@ refreshPushState().then(() => render());
 
 function send(payload) {
   if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+}
+
+// Applies the shared Brian/Justy/Custom choice automatically once seated,
+// so picking a name on one game already shows up on every other one —
+// harmless to repeat (only actually sends when it'd change something).
+function syncSavedName(game) {
+  if (mySeat === null || isSpectator) return;
+  const saved = window.NamePicker.getSaved();
+  if (saved && game.players[mySeat].name !== saved) send({ type: 'setName', name: saved });
 }
 
 function flashError(message) {
@@ -537,9 +547,15 @@ function renderPlaying(game, seatsTaken) {
       </div>
     </div>
     ${legendHtml()}
+    <section class="controls">
+      ${mySeat !== null && !isSpectator ? `<div id="name-picker-root">${window.NamePicker.html(game.players[mySeat].name)}</div>` : ''}
+    </section>
   `;
 
   bindHeaderControls();
+  window.NamePicker.bind(document.getElementById('name-picker-root'), (newName) => {
+    send({ type: 'setName', name: newName });
+  });
   if (myTurn) {
     document.getElementById('enemy-grid')?.addEventListener('click', (e) => {
       const cell = e.target.closest('.bs-cell.clickable');

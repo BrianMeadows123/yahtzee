@@ -183,6 +183,7 @@ function connect() {
       latest = msg;
       mySeat = msg.you.seat;
       isSpectator = msg.you.spectator;
+      syncSavedName(msg.game);
       const firstRollOfTurn = prevGame && !prevGame.turnStarted && msg.game.turnStarted;
       const reroll = prevGame && prevGame.turnStarted && msg.game.turnStarted
         && msg.game.currentPlayer === prevGame.currentPlayer
@@ -205,6 +206,15 @@ refreshPushState().then(() => render());
 
 function send(payload) {
   if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+}
+
+// Applies the shared Brian/Justy/Custom choice automatically once seated,
+// so picking a name on one game already shows up on every other one —
+// harmless to repeat (only actually sends when it'd change something).
+function syncSavedName(game) {
+  if (mySeat === null || isSpectator) return;
+  const saved = window.NamePicker.getSaved();
+  if (saved && game.players[mySeat].name !== saved) send({ type: 'setName', name: saved });
 }
 
 function flashError(message) {
@@ -266,7 +276,7 @@ function render() {
       <button id="roll-btn" ${canRoll ? '' : 'disabled'}>
         ${game.turnStarted ? `Roll (${game.rollsRemaining} left)` : 'Roll dice'}
       </button>
-      ${mySeat !== null && !isSpectator ? nameEditor(game.players[mySeat].name) : ''}
+      ${mySeat !== null && !isSpectator ? `<div id="name-picker-root">${window.NamePicker.html(game.players[mySeat].name)}</div>` : ''}
     </section>
 
     <section class="scorecards">
@@ -305,8 +315,8 @@ function render() {
       }
     });
   });
-  document.getElementById('name-input')?.addEventListener('change', (e) => {
-    send({ type: 'setName', name: e.target.value });
+  window.NamePicker.bind(document.getElementById('name-picker-root'), (newName) => {
+    send({ type: 'setName', name: newName });
   });
 }
 
@@ -334,10 +344,6 @@ function diceEl(value, held, index, canHold, turnStarted) {
       <div class="pip-grid">${pipGridHtml(value)}</div>
     </div>
   `;
-}
-
-function nameEditor(name) {
-  return `<input id="name-input" type="text" value="${escapeHtml(name)}" maxlength="24" placeholder="Your name" />`;
 }
 
 function scorecardEl(player, seatIndex, game, scoreOptions, canScoreHere) {

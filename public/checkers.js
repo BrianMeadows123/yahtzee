@@ -119,6 +119,7 @@ function connect() {
       latest = msg;
       mySeat = msg.you.seat;
       isSpectator = msg.you.spectator;
+      syncSavedName(msg.game);
       if (prevGame && prevGame.phase !== 'finished' && msg.game.phase === 'finished') {
         animateFinishOnNextRender = true;
       }
@@ -136,6 +137,15 @@ refreshPushState().then(() => render());
 
 function send(payload) {
   if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+}
+
+// Applies the shared Brian/Justy/Custom choice automatically once seated,
+// so picking a name on one game already shows up on every other one —
+// harmless to repeat (only actually sends when it'd change something).
+function syncSavedName(game) {
+  if (mySeat === null || isSpectator) return;
+  const saved = window.NamePicker.getSaved();
+  if (saved && game.players[mySeat].name !== saved) send({ type: 'setName', name: saved });
 }
 
 function flashError(message) {
@@ -369,10 +379,16 @@ function renderPlaying(game, seatsTaken) {
       <div class="ck-grid" id="ck-grid">${boardHtml(game)}</div>
     </div>
     ${legendHtml(game)}
+    <section class="controls">
+      ${mySeat !== null && !isSpectator ? `<div id="name-picker-root">${window.NamePicker.html(game.players[mySeat].name)}</div>` : ''}
+    </section>
   `;
 
   bindHeaderControls();
   bindBoard(game);
+  window.NamePicker.bind(document.getElementById('name-picker-root'), (newName) => {
+    send({ type: 'setName', name: newName });
+  });
 }
 
 function renderFinished(game) {

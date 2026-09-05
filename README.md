@@ -33,9 +33,11 @@ Covers the scoring rules and the turn/game flow, including the joker rule edge c
 - **Connect Four** — the second game. Same real-time two-device play, same design system, no persistence/stats (yet).
 - **Battleship** — the third game. Hidden information instead of luck: each player places their fleet privately, then takes turns firing blind at the other's board. No persistence/stats (yet).
 - **Checkers** — the fourth game. Standard American rules: mandatory captures, multi-jump chains, kinging. No persistence/stats (yet).
-- **Solitaire** — the fifth game, and the odd one out: single-player, so it's not a live room at all. Play Free Play any time (unlimited random deals), or Today's Challenge — a daily seeded deal so you can each play it on your own schedule and compare scores afterward. Has its own stats/leaderboard.
+- **Solitaire** — the fifth game, and the odd one out: single-player, so it's not a live room at all. Play Free Play any time (unlimited random deals), or Today's Challenge — a daily seeded deal so you can each play it on your own schedule and compare scores afterward. The daily deal is guaranteed to actually be winnable — a solver checks it (and tries a backup deal if it somehow isn't) before handing it out, rather than just hoping the shuffle is fair. Has its own stats/leaderboard.
 
 Each two-player game is its own room with its own seats — whoever connects to a game first is "Player 1" there, the second person just joins. Switching what you're playing never loses progress on the other game; you could have both going at once. Solitaire doesn't use rooms/seats at all, since there's no opponent to synchronize with.
+
+Every game shares one name picker (Brian / Justy / a typed custom name) — pick your name once on any game and it's already applied everywhere else, no re-typing per game.
 
 ## Stack
 

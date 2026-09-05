@@ -67,3 +67,8 @@
 - [x] Drag-and-drop reuses the Checkers/Battleship ghost-element + `elementFromPoint` Pointer Events pattern
 - [x] Own leaderboard panel (🏆 icon) on the page itself: free-play stats per name, plus a daily-results table comparing both players day by day
 - [ ] No dedicated move/draw sound yet — only the shared win/lose sounds are wired up so far
+
+## Done: Solitaire follow-ups (readability, shared identity, guaranteed-winnable daily deal)
+- [x] Stacked tableau cards were unreadable (covered cards only showed a ~22px sliver, and rank/suit text was centered) — switched to a corner index like a real playing card, so a covered card's visible sliver still shows its rank/suit
+- [x] Shared Brian/Justy/Custom name picker (`public/name-picker.js`) replacing free-text name entry, added to **all five** games (Battleship and Checkers never had a name-editing UI before this at all) — one shared identity (`gamenight-name` in localStorage) auto-applied the moment you're seated in any game, so picking a name once shows up everywhere
+- [x] The daily challenge deal is now guaranteed solvable, backed by an actual found winning move sequence — not a probability. `games/solitaire/solver.js` (greedy best-first search, reuses the real game logic as its step function) tries the plain date, then deterministic fallback seeds, caching whichever one solves in a new `daily_seeds` table. Calibrated against real dates: the plain date solves the large majority of the time, almost always within milliseconds; a fallback is rarely needed more than once or twice. Chunked to yield to the event loop so a same-day search never freezes other players' live games.

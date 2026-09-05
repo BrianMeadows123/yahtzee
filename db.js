@@ -51,6 +51,11 @@ db.exec(`
     elapsed_seconds INTEGER NOT NULL,
     UNIQUE(name, mode, seed)
   );
+  CREATE TABLE IF NOT EXISTS daily_seeds (
+    date TEXT PRIMARY KEY,
+    seed TEXT NOT NULL,
+    computed_at TEXT NOT NULL
+  );
 `);
 
 // Push subscriptions are keyed by the seat token (the stable per-device
@@ -188,6 +193,23 @@ export function getSolitaireStats() {
   `).all();
 
   return { freePlay, daily };
+}
+
+// Caches which seed the daily challenge actually used for a given date —
+// usually just the date itself, but occasionally a suffixed fallback
+// candidate when the plain date's shuffle couldn't be proven solvable (see
+// server.js's ensureDailySeed). Computed once per date, not once per
+// request — the search behind it can take real seconds.
+export function getCachedDailySeed(date) {
+  const row = db.prepare('SELECT seed FROM daily_seeds WHERE date = ?').get(date);
+  return row ? row.seed : null;
+}
+
+export function cacheDailySeed(date, seed) {
+  db.prepare(`
+    INSERT INTO daily_seeds (date, seed, computed_at) VALUES (?, ?, ?)
+    ON CONFLICT(date) DO UPDATE SET seed = excluded.seed, computed_at = excluded.computed_at
+  `).run(date, seed, new Date().toISOString());
 }
 
 export function closeDb() {

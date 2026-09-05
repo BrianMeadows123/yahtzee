@@ -13,9 +13,10 @@ import { newGame as newBattleshipGame, placeFleet, fire, isSunk } from './games/
 import { newGame as newCheckersGame, move as moveCheckersPiece } from './games/checkers/logic.js';
 import {
   recordGame, getStats, closeDb, saveSubscription, getSubscription, removeSubscription,
-  recordSolitaireGame, getSolitaireStats,
+  recordSolitaireGame, getSolitaireStats, getCachedDailySeed, cacheDailySeed,
 } from './db.js';
 import { publicKey as vapidPublicKey, sendPush } from './push.js';
+import { solve as solveSolitaire } from './games/solitaire/solver.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -96,6 +97,42 @@ async function notifyTurn(room, title) {
   const name = room.game.players[room.game.currentPlayer].name;
   const ok = await sendPush(subscription, { title, body: `Your turn, ${name}!` });
   if (!ok) removeSubscription(token);
+}
+
+// --- Solitaire daily-challenge seed: guaranteed solvable ---------------------
+// Tries the plain date first, then deterministic suffixed fallbacks, against
+// the best-first solver (games/solitaire/solver.js) — each candidate a real,
+// found winning move sequence, not a probabilistic guess. Computed once per
+// calendar date (cached in daily_seeds) since the search can take real
+// seconds; every candidate attempt yields to the event loop periodically
+// (see solver.js) so this never freezes other players' live games in the
+// meantime. Falls back to the plain date (not proven solvable) only if every
+// candidate is exhausted — expected to be rare in practice.
+const DAILY_SOLVE_OPTIONS = { maxStates: 400000, maxMs: 6000 };
+const DAILY_SOLVE_MAX_CANDIDATES = 15;
+const dailySeedPromises = new Map(); // date -> in-flight promise, so concurrent requests don't both search
+
+async function computeDailySeed(date) {
+  for (let attempt = 1; attempt <= DAILY_SOLVE_MAX_CANDIDATES; attempt++) {
+    const candidate = attempt === 1 ? date : `${date}-${attempt}`;
+    const result = await solveSolitaire(candidate, DAILY_SOLVE_OPTIONS);
+    if (result.solvable) return candidate;
+  }
+  console.error(`Solitaire: no solvable daily seed found for ${date} after ${DAILY_SOLVE_MAX_CANDIDATES} candidates — falling back to the plain date (not proven solvable).`);
+  return date;
+}
+
+async function ensureDailySeed(date) {
+  const cached = getCachedDailySeed(date);
+  if (cached) return cached;
+  if (!dailySeedPromises.has(date)) {
+    dailySeedPromises.set(date, computeDailySeed(date).then((seed) => {
+      cacheDailySeed(date, seed);
+      dailySeedPromises.delete(date);
+      return seed;
+    }));
+  }
+  return dailySeedPromises.get(date);
 }
 
 // --- Per-game client-state shaping ---------------------------------------------
@@ -255,6 +292,19 @@ async function handleRequest(req, res) {
 
   if (reqPath === '/api/solitaire/stats') {
     sendJson(res, 200, getSolitaireStats());
+    return;
+  }
+
+  if (reqPath === '/api/solitaire/daily-seed') {
+    const date = new URL(req.url, 'http://localhost').searchParams.get('date');
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) { sendJson(res, 400, { error: 'Missing or invalid date (expected YYYY-MM-DD)' }); return; }
+    try {
+      const seed = await ensureDailySeed(date);
+      sendJson(res, 200, { seed });
+    } catch (err) {
+      console.error('Solitaire daily-seed resolution failed:', err);
+      sendJson(res, 200, { seed: date }); // best-effort fallback — keep the game playable even if the solver itself errors
+    }
     return;
   }
 

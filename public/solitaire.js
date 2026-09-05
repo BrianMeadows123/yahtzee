@@ -57,7 +57,7 @@ function confettiPiecesHtml(count) {
 // Solitaire has no opponent to synchronize with, so it never opens a
 // WebSocket — logic.js runs directly in the browser and the server is only
 // touched via REST to persist a finished game for the shared leaderboard.
-let name = localStorage.getItem('solitaire-name') || '';
+let name = window.NamePicker.getSaved();
 let mode = localStorage.getItem('solitaire-mode') || 'daily';
 let game = null;
 let gameStart = null;
@@ -93,17 +93,25 @@ function stopTimer() {
   timerHandle = null;
 }
 
-function saveKey(m) {
-  return m === 'daily' ? `solitaire-save-daily-${todayDate()}` : 'solitaire-save-free';
+function saveKey(m, dailySeed) {
+  return m === 'daily' ? `solitaire-save-daily-${dailySeed}` : 'solitaire-save-free';
 }
 function persist() {
-  try { localStorage.setItem(saveKey(mode), JSON.stringify({ game, gameStart })); } catch { /* private-browsing storage denial — game still works, just won't resume */ }
+  try { localStorage.setItem(saveKey(mode, game?.seed), JSON.stringify({ game, gameStart })); } catch { /* private-browsing storage denial — game still works, just won't resume */ }
 }
-function loadSaved(m) {
+function loadSaved(m, dailySeed) {
   try {
-    const raw = localStorage.getItem(saveKey(m));
+    const raw = localStorage.getItem(saveKey(m, dailySeed));
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+async function resolveDailySeed() {
+  try {
+    const { seed } = await fetch(`/api/solitaire/daily-seed?date=${todayDate()}`).then((r) => r.json());
+    return seed;
+  } catch {
+    return todayDate(); // offline fallback — keeps the game playable, just not provably solvable
+  }
 }
 
 async function refreshStats() {
@@ -132,8 +140,8 @@ async function submitResult(elapsedSeconds) {
   } catch { /* offline/server hiccup — the finished screen still shows locally */ }
 }
 
-function newRound() {
-  const seed = mode === 'daily' ? todayDate() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+function newRound(dailySeed) {
+  const seed = mode === 'daily' ? dailySeed : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   game = newGame(seed, mode);
   gameStart = Date.now();
   persist();
@@ -142,20 +150,30 @@ function newRound() {
 async function enterMode(m) {
   mode = m;
   localStorage.setItem('solitaire-mode', mode);
+  if (mode === 'daily') {
+    // Resolving today's guaranteed-solvable seed usually returns in
+    // milliseconds (cached after the first request of the day), but the
+    // very first request of a new day runs the solver — show a loading
+    // state immediately rather than leaving the previous tab's board up
+    // for however long that takes.
+    game = null;
+    render();
+  }
   await refreshStats(); // catches a result submitted elsewhere/earlier this session before deciding the daily lock
-  dailyLockedResult = mode === 'daily' ? findDailyResult(name, todayDate()) : null;
+  const dailySeed = mode === 'daily' ? await resolveDailySeed() : null;
+  dailyLockedResult = mode === 'daily' ? findDailyResult(name, dailySeed) : null;
   if (dailyLockedResult) {
     game = null;
     stopTimer();
     render();
     return;
   }
-  const saved = loadSaved(mode);
+  const saved = loadSaved(mode, dailySeed);
   if (saved?.game && saved.game.phase === 'playing') {
     game = saved.game;
     gameStart = saved.gameStart;
   } else {
-    newRound();
+    newRound(dailySeed);
   }
   startTimer();
   render();
@@ -329,17 +347,17 @@ function headerHtml() {
 }
 function tabsHtml() {
   return `
-    <div class="sol-tabs">
-      <button class="sol-tab ${mode === 'daily' ? 'active' : ''}" data-mode="daily">Today's Challenge</button>
-      <button class="sol-tab ${mode === 'free' ? 'active' : ''}" data-mode="free">Free Play</button>
+    <div class="choice-group">
+      <button class="choice-btn ${mode === 'daily' ? 'active' : ''}" data-mode="daily">Today's Challenge</button>
+      <button class="choice-btn ${mode === 'free' ? 'active' : ''}" data-mode="free">Free Play</button>
     </div>
   `;
 }
 function nameFieldHtml() {
   return `
     <div class="sol-name-row">
-      <label for="sol-name-input">Playing as</label>
-      <input id="sol-name-input" type="text" maxlength="24" value="${escapeHtml(name)}" placeholder="Your name" />
+      <label>Playing as</label>
+      ${window.NamePicker.html(name)}
     </div>
   `;
 }
@@ -456,14 +474,13 @@ function bindHeaderControls() {
   });
 }
 function bindTabs() {
-  document.querySelectorAll('.sol-tab').forEach((btn) => {
+  document.querySelectorAll('.choice-btn[data-mode]').forEach((btn) => {
     btn.addEventListener('click', () => { if (btn.dataset.mode !== mode) enterMode(btn.dataset.mode); });
   });
 }
 function bindNameField() {
-  document.getElementById('sol-name-input')?.addEventListener('change', (e) => {
-    name = e.target.value.trim();
-    localStorage.setItem('solitaire-name', name);
+  window.NamePicker.bind(document.querySelector('.sol-name-row .name-picker'), (newName) => {
+    name = newName;
     enterMode(mode); // re-check the daily lock under the new name
   });
 }

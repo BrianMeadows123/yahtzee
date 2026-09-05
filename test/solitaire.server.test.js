@@ -117,3 +117,15 @@ test('a result missing a required field is rejected with 400', async () => {
   });
   assert.equal(res.status, 400);
 });
+
+test('the daily seed is resolved once and then cached for repeat calls on the same date', async () => {
+  const first = await fetch(`${BASE_URL}/api/solitaire/daily-seed?date=2030-06-15`).then((r) => r.json());
+  assert.ok(first.seed);
+  const second = await fetch(`${BASE_URL}/api/solitaire/daily-seed?date=2030-06-15`).then((r) => r.json());
+  assert.equal(second.seed, first.seed);
+}, { timeout: 120000 }); // worst case tries several candidates against the solver; almost always resolves in well under a second
+
+test('a malformed date is rejected with 400', async () => {
+  const res = await fetch(`${BASE_URL}/api/solitaire/daily-seed?date=not-a-date`);
+  assert.equal(res.status, 400);
+});
